@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.cache
+.pytest_cache
+.coverage
+
+# do not track the test notebook
+notebooks/test_notebook.ipynb
+
+# Build directory - ignore everything except compile_commands.json
+build/*
+!build/compile_commands.json

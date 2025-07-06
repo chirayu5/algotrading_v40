@@ -1,0 +1,11 @@
+[
+  {
+    "directory": "/Users/chirayuagrawal/algotrading_v40/build",
+    "command": "/usr/bin/c++ -Dalgotrading_v40_cpp_EXPORTS -isystem /Users/chirayuagrawal/algotrading_v40/.venv/lib/python3.12/site-packages/pybind11/include -isystem /Users/chirayuagrawal/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/include/python3.12 -std=gnu++20 -arch arm64 -fPIC -fvisibility=hidden -flto -o CMakeFiles/algotrading_v40_cpp.dir/src/cpp/data_selectors/periodic_data_selector.cpp.o -c /Users/chirayuagrawal/algotrading_v40/src/cpp/data_selectors/periodic_data_selector.cpp",
+    "file": "/Users/chirayuagrawal/algotrading_v40/src/cpp/data_selectors/periodic_data_selector.cpp",
+    "output": "CMakeFiles/algotrading_v40_cpp.dir/src/cpp/data_selectors/periodic_data_selector.cpp.o"
+  }
+]
+// Created with -
+// uv run cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -Dpybind11_DIR=/Users/chirayuagrawal/algotrading_v40/.venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11
+// This was done to fix the clangd VS Code extension not able to locate the C++ headers.
