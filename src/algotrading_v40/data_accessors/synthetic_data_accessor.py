@@ -175,7 +175,7 @@ class SyntheticIndianEquityDataAccessor:
     symbol_to_df = {}
     for symbol, config in self.symbols.items():
       symbol_to_df[symbol] = self._get_ohlc(start_date, end_date, config)
-    return sd.Data(symbol_to_df)
+    return sd.Data.create_from_symbol_to_df(symbol_to_df)
 
   def _get_ohlc(
     self,
