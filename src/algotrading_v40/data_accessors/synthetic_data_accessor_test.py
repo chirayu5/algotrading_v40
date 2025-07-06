@@ -297,9 +297,6 @@ class TestSyntheticIndianEquityDataAccessor:
     accessor = dasda.SyntheticIndianEquityDataAccessor(symbols)
 
     # test default SyntheticIndianEquityDataConfig are set correctly
-    assert all(
-      v.gbm_params == dasda.DEFAULT_GBM_PARAMS for v in accessor.symbols.values()
-    )
     assert all(v.drop_fraction is None for v in accessor.symbols.values())
 
     start_date = dt.date(2023, 1, 2)  # monday

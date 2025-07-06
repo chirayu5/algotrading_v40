@@ -149,22 +149,22 @@ class SyntheticIndianEquityDataConfig:
     )
 
 
-DEFAULT_GBM_PARAMS = GBMParams(
-  S0=np.random.uniform(10, 1000),
-  mu=np.random.uniform(-6, 6),
-  sigma=np.random.uniform(0.1, 0.6),
-  dt=1
-  / (365 * 24 * 60),  # create_trading_datetime_index always returns 1 minute intervals
-)
-
-
 class SyntheticIndianEquityDataAccessor:
   def __init__(self, symbols: list[str] | dict[str, SyntheticIndianEquityDataConfig]):
     if isinstance(symbols, list):
+      default_gbm_params = GBMParams(
+        S0=np.random.uniform(10, 1000),
+        mu=np.random.uniform(-6, 6),
+        sigma=np.random.uniform(0.1, 0.6),
+        dt=1
+        / (
+          365 * 24 * 60
+        ),  # create_trading_datetime_index always returns 1 minute intervals
+      )
       self.symbols = {
         symbol: SyntheticIndianEquityDataConfig(
           drop_fraction=None,  # no drop by default
-          gbm_params=DEFAULT_GBM_PARAMS,
+          gbm_params=default_gbm_params,
         )
         for symbol in symbols
       }
