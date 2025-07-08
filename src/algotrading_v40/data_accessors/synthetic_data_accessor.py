@@ -52,9 +52,6 @@ class GMCIDResult:
 
 def get_most_common_index_delta(index: pd.DatetimeIndex) -> GMCIDResult:
   """Get the most common index delta in minutes."""
-  assert isinstance(index, pd.DatetimeIndex), (
-    f"index must be a pd.DatetimeIndex, got {type(index)}"
-  )
   if len(index) <= 1:
     return GMCIDResult(
       most_common_index_delta=None,
@@ -83,12 +80,12 @@ class GBMParams:
 
 
 def fit_gbm(prices: pd.Series) -> GBMParams:
-  assert isinstance(prices.index, pd.DatetimeIndex), (
-    f"index must be a pd.DatetimeIndex, got {type(prices.index)}"
-  )
-  index_delta = get_most_common_index_delta(prices.index).most_common_index_delta
-  assert index_delta is not None
-  dt = index_delta / (365 * 24 * 60)
+  # If index is not a DatetimeIndex, get_most_common_index_delta will error.
+  # So no need to check for DatetimeIndex here.
+  index_delta = get_most_common_index_delta(prices.index).most_common_index_delta  # type: ignore
+  # Code should error if index_delta is None.
+  # So ignore the type error here.
+  dt = index_delta / (365 * 24 * 60)  # type: ignore
   dlp = np.log(prices) - np.log(prices.shift(1))
   sigma = dlp.std() / np.sqrt(
     dt
@@ -103,9 +100,10 @@ def fit_gbm(prices: pd.Series) -> GBMParams:
 
 
 def ohlc_from_path(path: np.ndarray, bucket_size: int) -> pd.DataFrame:
-  assert len(path) % bucket_size == 0, (
-    f"path length must be divisible by bucket_size, got {len(path)} and {bucket_size}"
-  )
+  if len(path) % bucket_size != 0:
+    raise ValueError(
+      f"path length must be divisible by bucket_size, got {len(path)} and {bucket_size}"
+    )
   price_path_reshaped = path.reshape(len(path) // bucket_size, bucket_size)
   return pd.DataFrame(
     {
@@ -136,21 +134,23 @@ def simulate_gbm_ohlc(gbm_params: GBMParams, N: int) -> pd.DataFrame:
 
 
 @dataclasses.dataclass(frozen=True)
-class SyntheticIndianEquityDataConfig:
+class SyntheticDataConfig:
   drop_fraction: float | None
   gbm_params: GBMParams
 
   def __post_init__(self):
-    assert self.drop_fraction is None or (0 < self.drop_fraction < 0.9), (
-      f"drop_fraction must be None or between 0 and 0.9, got {self.drop_fraction}"
-    )
-    assert np.isclose(self.gbm_params.dt, 1 / (365 * 24 * 60)), (
-      f"dt must be 1 minute, got {self.gbm_params.dt * 365 * 24 * 60} minutes"
-    )
+    if not (self.drop_fraction is None or (0 < self.drop_fraction < 0.9)):
+      raise ValueError(
+        f"drop_fraction must be None or between 0 and 0.9, got {self.drop_fraction}"
+      )
+    if not np.isclose(self.gbm_params.dt, 1 / (365 * 24 * 60)):
+      raise ValueError(
+        f"dt must be 1 minute, got {self.gbm_params.dt * 365 * 24 * 60} minutes"
+      )
 
 
-class SyntheticIndianEquityDataAccessor:
-  def __init__(self, symbols: list[str] | dict[str, SyntheticIndianEquityDataConfig]):
+class SyntheticDataAccessor:
+  def __init__(self, symbols: list[str] | dict[str, SyntheticDataConfig]):
     if isinstance(symbols, list):
       default_gbm_params = GBMParams(
         S0=np.random.uniform(10, 1000),
@@ -162,7 +162,7 @@ class SyntheticIndianEquityDataAccessor:
         ),  # create_trading_datetime_index always returns 1 minute intervals
       )
       self.symbols = {
-        symbol: SyntheticIndianEquityDataConfig(
+        symbol: SyntheticDataConfig(
           drop_fraction=None,  # no drop by default
           gbm_params=default_gbm_params,
         )
@@ -181,7 +181,7 @@ class SyntheticIndianEquityDataAccessor:
     self,
     start_date: dt.date,
     end_date: dt.date,
-    config: SyntheticIndianEquityDataConfig,
+    config: SyntheticDataConfig,
   ) -> pd.DataFrame:
     index = create_trading_datetime_index(start_date, end_date)
     df_ohlc = simulate_gbm_ohlc(

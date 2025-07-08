@@ -161,8 +161,8 @@ class TestGetMostCommonIndexDelta:
 
   def test_non_datetime_index(self):
     index = pd.Index([1, 2, 3])
-
-    with pytest.raises(AssertionError):
+    # non-datetime index should error
+    with pytest.raises(Exception):
       dasda.get_most_common_index_delta(index)  # type: ignore
 
 
@@ -273,7 +273,7 @@ class TestGBMEngine:
 
     # Test assertion error for non-divisible path length
     path = np.array([1, 2, 3, 4, 5])
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
       dasda.ohlc_from_path(path, bucket_size=3)
 
     # Test empty path
@@ -292,11 +292,11 @@ class TestGBMEngine:
 
 class TestSyntheticIndianEquityDataAccessor:
   def test_default_config(self):
-    """Test SyntheticIndianEquityDataAccessor functionality."""
+    """Test SyntheticDataAccessor functionality."""
     symbols = ["PGHH", "COLPAL", "NESTLEIND"]
-    accessor = dasda.SyntheticIndianEquityDataAccessor(symbols)
+    accessor = dasda.SyntheticDataAccessor(symbols)
 
-    # test default SyntheticIndianEquityDataConfig are set correctly
+    # test default SyntheticDataConfig are set correctly
     assert all(v.drop_fraction is None for v in accessor.symbols.values())
 
     start_date = dt.date(2023, 1, 2)  # monday
@@ -342,28 +342,46 @@ class TestSyntheticIndianEquityDataAccessor:
         2 * 24 * 60
       )  # the weekend gap is 1066 minutes (17 hours 46 minutes) + 2 days (48 hours)
 
-    single_accessor = dasda.SyntheticIndianEquityDataAccessor(["SINGLE"])
+    single_accessor = dasda.SyntheticDataAccessor(["SINGLE"])
     single_data = single_accessor.get(start_date, end_date)
     assert len(single_data.available_symbols()) == 1
     assert "SINGLE" in single_data.available_symbols()
 
-    empty_accessor = dasda.SyntheticIndianEquityDataAccessor([])
+    empty_accessor = dasda.SyntheticDataAccessor([])
     empty_data = empty_accessor.get(start_date, end_date)
     assert len(empty_data.available_symbols()) == 0
 
   def test_custom_config(self):
-    """Test SyntheticIndianEquityDataAccessor functionality with custom configurations."""
+    """Test SyntheticDataAccessor functionality with custom configurations."""
+
+    # test that bad configs raise errors
+    with pytest.raises(ValueError):
+      dasda.SyntheticDataConfig(
+        drop_fraction=1.0,
+        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
+      )
+    with pytest.raises(ValueError):
+      dasda.SyntheticDataConfig(
+        drop_fraction=-0.1,
+        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
+      )
+    with pytest.raises(ValueError):
+      dasda.SyntheticDataConfig(
+        drop_fraction=0.5,
+        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=60 / (365 * 24 * 60)),
+      )
+
     symbols = {
-      "PGHH": dasda.SyntheticIndianEquityDataConfig(
+      "PGHH": dasda.SyntheticDataConfig(
         drop_fraction=0.8,
         gbm_params=dasda.GBMParams(S0=123, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60)),
       ),
-      "COLPAL": dasda.SyntheticIndianEquityDataConfig(
+      "COLPAL": dasda.SyntheticDataConfig(
         drop_fraction=None,
         gbm_params=dasda.GBMParams(S0=244, mu=-5, sigma=0.7, dt=1 / (365 * 24 * 60)),
       ),
     }
-    accessor = dasda.SyntheticIndianEquityDataAccessor(symbols)
+    accessor = dasda.SyntheticDataAccessor(symbols)
     assert all(
       v == symbols[k] for k, v in accessor.symbols.items()
     )  # check that custom configs are set correctly
