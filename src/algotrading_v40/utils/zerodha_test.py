@@ -12,7 +12,7 @@ import algotrading_v40.utils.zerodha as zerodha
 
 class TestInstrumentDescIsValid:
   def test_valid_indian_spot_desc(self):
-    spot_desc = sid.SpotDesc(symbol="RELIANCE", market=sid.Market.INDIAN_MARKET)
+    spot_desc = sid.EquityDesc(symbol="RELIANCE", market=sid.Market.INDIAN_MARKET)
     assert zerodha.instrument_desc_is_valid(spot_desc) is True
 
   def test_valid_indian_index_desc(self):
@@ -20,7 +20,7 @@ class TestInstrumentDescIsValid:
     assert zerodha.instrument_desc_is_valid(index_desc) is True
 
   def test_invalid_non_indian_market(self):
-    spot_desc = sid.SpotDesc(symbol="BTC", market=sid.Market.CRYPTO)
+    spot_desc = sid.EquityDesc(symbol="GOOG", market=sid.Market.US_MARKET)
     assert zerodha.instrument_desc_is_valid(spot_desc) is False
 
   def test_invalid_option_desc(self):
@@ -32,7 +32,7 @@ class TestInstrumentDescIsValid:
 
 class TestGetKiteDataForRange:
   def test_invalid_instrument_desc(self):
-    invalid_desc = sid.SpotDesc(symbol="BTC", market=sid.Market.CRYPTO)
+    invalid_desc = sid.EquityDesc(symbol="GOOG", market=sid.Market.US_MARKET)
     date_range = sdr.DateRange(datetime.date(2023, 1, 1), datetime.date(2023, 1, 31))
     mock_kite = Mock()
 
@@ -42,7 +42,7 @@ class TestGetKiteDataForRange:
 
 class TestGetFullKiteDataForRange:
   def test_short_date_range(self):
-    spot_desc = sid.SpotDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
+    spot_desc = sid.EquityDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
     date_range = sdr.DateRange(datetime.date(2025, 1, 1), datetime.date(2025, 1, 1))
     mock_kite = Mock()
     mock_kite.ltp.return_value = {"NSE:HDFCBANK": {"instrument_token": 123456}}
@@ -97,7 +97,7 @@ class TestGetFullKiteDataForRange:
     )
 
   def test_long_date_range_partial(self):
-    spot_desc = sid.SpotDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
+    spot_desc = sid.EquityDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
     date_range = sdr.DateRange(datetime.date(2023, 1, 1), datetime.date(2023, 5, 5))
     mock_kite = Mock()
     mock_kite.ltp.return_value = {"NSE:HDFCBANK": {"instrument_token": 123456}}
@@ -160,7 +160,7 @@ class TestGetFullKiteDataForRange:
     ]
 
   def test_long_date_range_no_partial(self):
-    spot_desc = sid.SpotDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
+    spot_desc = sid.EquityDesc(symbol="HDFCBANK", market=sid.Market.INDIAN_MARKET)
     date_range = sdr.DateRange(datetime.date(2023, 1, 1), datetime.date(2023, 4, 30))
     mock_kite = Mock()
     mock_kite.ltp.return_value = {"NSE:HDFCBANK": {"instrument_token": 123456}}
@@ -192,7 +192,7 @@ class TestGetFullKiteDataForRange:
     ]
 
   def test_invalid_instrument_desc(self):
-    invalid_desc = sid.SpotDesc(symbol="BTC", market=sid.Market.CRYPTO)
+    invalid_desc = sid.EquityDesc(symbol="GOOG", market=sid.Market.US_MARKET)
     date_range = sdr.DateRange(datetime.date(2023, 1, 1), datetime.date(2023, 1, 31))
     mock_kite = Mock()
 

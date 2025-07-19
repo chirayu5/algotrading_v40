@@ -16,7 +16,7 @@ def instrument_desc_is_valid(instrument_desc: sid.InstrumentDesc) -> bool:
   Options are not supported.
   """
   if not (
-    isinstance(instrument_desc, sid.SpotDesc)
+    isinstance(instrument_desc, sid.EquityDesc)
     or isinstance(instrument_desc, sid.IndexDesc)
   ):
     return False

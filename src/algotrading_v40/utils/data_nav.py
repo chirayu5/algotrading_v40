@@ -22,8 +22,8 @@ def get_raw_path_from_instrument_desc(instrument_desc: sid.InstrumentDesc) -> st
     "raw",
     instrument_desc.market.value,
   )
-  if isinstance(instrument_desc, sid.SpotDesc):
-    return os.path.join(prefix, "spot", f"{instrument_desc.symbol}.parquet")
+  if isinstance(instrument_desc, sid.EquityDesc):
+    return os.path.join(prefix, "equity", f"{instrument_desc.symbol}.parquet")
   elif isinstance(instrument_desc, sid.IndexDesc):
     return os.path.join(prefix, "index", f"{instrument_desc.symbol}.parquet")
   raise ValueError(f"Unsupported instrument description: {instrument_desc}")

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 class Market(enum.Enum):
   INDIAN_MARKET = "indian_market"
+  US_MARKET = "us_market"
   CRYPTO = "crypto"
 
 
@@ -14,13 +15,21 @@ class InstrumentDesc:
 
 
 @dataclass(frozen=True, order=True)
-class SpotDesc(InstrumentDesc):
-  pass
+class EquityDesc(InstrumentDesc):
+  def __post_init__(self):
+    if self.market == Market.CRYPTO:
+      raise ValueError(
+        f"EquityDesc can not be used for crypto market, got {self.market}"
+      )
 
 
 @dataclass(frozen=True, order=True)
 class IndexDesc(InstrumentDesc):
-  pass
+  def __post_init__(self):
+    if self.market == Market.CRYPTO:
+      raise ValueError(
+        f"IndexDesc can not be used for crypto market, got {self.market}"
+      )
 
 
 @dataclass(frozen=True, order=True)
