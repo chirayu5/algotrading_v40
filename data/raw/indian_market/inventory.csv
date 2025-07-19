@@ -1,0 +1,56 @@
+,company_name,industry,symbol,listing_date,type,first_date
+0,NIFTY AUTO,Automobile and Auto Components,NIFTY AUTO,2014-01-01,index,2015-01-09
+1,NIFTY FIN SERVICE,Financial Services,NIFTY FIN SERVICE,2014-01-01,index,2015-01-09
+2,NIFTY IT,Information Technology,NIFTY IT,2014-01-01,index,2015-01-09
+3,INDIA VIX,,INDIA VIX,2014-01-01,index,2015-01-09
+4,NIFTY 50,,NIFTY 50,2014-01-01,index,2015-01-09
+5,Bajaj Auto Ltd.,Automobile and Auto Components,BAJAJ-AUTO,2008-05-26,equity,2015-02-02
+6,Eicher Motors Ltd.,Automobile and Auto Components,EICHERMOT,2004-09-07,equity,2015-02-02
+7,Hero MotoCorp Ltd.,Automobile and Auto Components,HEROMOTOCO,2003-04-11,equity,2015-02-02
+8,Mahindra & Mahindra Ltd.,Automobile and Auto Components,M&M,1996-01-03,equity,2015-02-02
+9,Maruti Suzuki India Ltd.,Automobile and Auto Components,MARUTI,2003-07-09,equity,2015-02-02
+10,Tata Motors Ltd.,Automobile and Auto Components,TATAMOTORS,1998-07-22,equity,2015-02-02
+11,Bharat Electronics Ltd.,Capital Goods,BEL,2000-07-19,equity,2015-02-02
+12,Larsen & Toubro Ltd.,Construction,LT,2004-06-23,equity,2015-02-02
+13,Grasim Industries Ltd.,Construction Materials,GRASIM,1995-05-10,equity,2015-02-02
+14,UltraTech Cement Ltd.,Construction Materials,ULTRACEMCO,2004-08-24,equity,2015-02-02
+15,Asian Paints Ltd.,Consumer Durables,ASIANPAINT,1995-05-31,equity,2015-02-02
+16,Titan Company Ltd.,Consumer Durables,TITAN,2004-09-24,equity,2015-02-02
+17,Eternal Ltd.,Consumer Services,ETERNAL,2021-07-23,equity,2021-07-23
+18,Trent Ltd.,Consumer Services,TRENT,2004-06-07,equity,2015-02-02
+19,Hindustan Unilever Ltd.,Fast Moving Consumer Goods,HINDUNILVR,1995-07-06,equity,2015-02-02
+20,ITC Ltd.,Fast Moving Consumer Goods,ITC,1995-08-23,equity,2015-02-02
+21,Nestle India Ltd.,Fast Moving Consumer Goods,NESTLEIND,2023-08-01,equity,2023-08-01
+22,Tata Consumer Products Ltd.,Fast Moving Consumer Goods,TATACONSUM,1998-11-18,equity,2015-02-02
+23,Axis Bank Ltd.,Financial Services,AXISBANK,1998-11-16,equity,2015-02-02
+24,Bajaj Finserv Ltd.,Financial Services,BAJAJFINSV,2008-05-26,equity,2015-02-02
+25,Bajaj Finance Ltd.,Financial Services,BAJFINANCE,2003-04-01,equity,2015-02-02
+26,HDFC Bank Ltd.,Financial Services,HDFCBANK,1995-11-08,equity,2015-02-02
+27,HDFC Life Insurance Company Ltd.,Financial Services,HDFCLIFE,2017-11-17,equity,2017-11-17
+28,ICICI Bank Ltd.,Financial Services,ICICIBANK,1997-09-17,equity,2015-02-02
+29,IndusInd Bank Ltd.,Financial Services,INDUSINDBK,1998-01-28,equity,2015-02-02
+30,Jio Financial Services Ltd.,Financial Services,JIOFIN,2023-08-21,equity,2023-08-21
+31,Kotak Mahindra Bank Ltd.,Financial Services,KOTAKBANK,1995-12-20,equity,2015-02-02
+32,SBI Life Insurance Company Ltd.,Financial Services,SBILIFE,2017-10-03,equity,2017-10-03
+33,State Bank of India,Financial Services,SBIN,1995-03-01,equity,2015-02-02
+34,Shriram Finance Ltd.,Financial Services,SHRIRAMFIN,1996-12-11,equity,2015-02-02
+35,Apollo Hospitals Enterprise Ltd.,Healthcare,APOLLOHOSP,1996-01-10,equity,2015-02-02
+36,Cipla Ltd.,Healthcare,CIPLA,1995-02-08,equity,2015-02-02
+37,Dr. Reddy's Laboratories Ltd.,Healthcare,DRREDDY,2003-05-30,equity,2015-02-02
+38,Sun Pharmaceutical Industries Ltd.,Healthcare,SUNPHARMA,1995-02-08,equity,2015-02-02
+39,HCL Technologies Ltd.,Information Technology,HCLTECH,2000-01-06,equity,2015-02-02
+40,Infosys Ltd.,Information Technology,INFY,1995-02-08,equity,2015-02-02
+41,Tata Consultancy Services Ltd.,Information Technology,TCS,2004-08-25,equity,2015-02-02
+42,Tech Mahindra Ltd.,Information Technology,TECHM,2006-08-28,equity,2015-02-02
+43,Wipro Ltd.,Information Technology,WIPRO,1995-11-08,equity,2015-02-02
+44,Adani Enterprises Ltd.,Metals & Mining,ADANIENT,1997-06-04,equity,2015-02-02
+45,Hindalco Industries Ltd.,Metals & Mining,HINDALCO,1997-01-08,equity,2015-02-02
+46,JSW Steel Ltd.,Metals & Mining,JSWSTEEL,2005-03-23,equity,2015-02-02
+47,Tata Steel Ltd.,Metals & Mining,TATASTEEL,1998-11-18,equity,2015-02-02
+48,Coal India Ltd.,Oil Gas & Consumable Fuels,COALINDIA,2010-11-04,equity,2015-02-02
+49,Oil & Natural Gas Corporation Ltd.,Oil Gas & Consumable Fuels,ONGC,1995-07-19,equity,2015-02-02
+50,Reliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,1995-11-29,equity,2015-02-02
+51,NTPC Ltd.,Power,NTPC,2004-11-05,equity,2015-02-02
+52,Power Grid Corporation of India Ltd.,Power,POWERGRID,2007-10-05,equity,2015-02-02
+53,Adani Ports and Special Economic Zone Ltd.,Services,ADANIPORTS,2007-11-27,equity,2015-02-02
+54,Bharti Airtel Ltd.,Telecommunication,BHARTIARTL,2002-02-15,equity,2015-02-02
