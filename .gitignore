@@ -17,3 +17,10 @@ notebooks/test_notebook.ipynb
 # Build directory - ignore everything except compile_commands.json
 build/*
 !build/compile_commands.json
+
+# data
+data/*
+!data/raw/indian_market/inventory.csv
+
+# zerodha_kite.pkl
+src/algotrading_v40/connectors/zerodha_kite.pkl
