@@ -4,6 +4,7 @@ __pycache__/
 dist/
 wheels/
 *.egg-info
+.DS_Store
 
 # Virtual environments
 .venv
@@ -18,9 +19,18 @@ notebooks/test_notebook.ipynb
 build/*
 !build/compile_commands.json
 
-# data
-data/*
+
+# Ignore everything inside the data directory …
+data/**
+# … but keep the two inventory.csv files we care about
+!data/
+!data/raw/
+!data/raw/indian_market/
 !data/raw/indian_market/inventory.csv
+!data/cleaned/
+!data/cleaned/indian_market/
+!data/cleaned/indian_market/inventory.csv
+
 
 # zerodha_kite.pkl
 src/algotrading_v40/connectors/zerodha_kite.pkl
