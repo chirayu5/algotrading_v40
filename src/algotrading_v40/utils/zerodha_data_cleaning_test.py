@@ -1,3 +1,4 @@
+import copy
 import datetime as dt
 from typing import Dict, Sequence
 
@@ -1097,6 +1098,15 @@ class TestAnalyseNumericColumnsQuality:
     result["col4"].n_bad_values_at_end == 3
 
 
+def _assert_instrument_desc_to_df_matches(
+  a: dict[sid.InstrumentDesc, pd.DataFrame],
+  b: dict[sid.InstrumentDesc, pd.DataFrame],
+):
+  assert a.keys() == b.keys()
+  for instrument_desc in a.keys():
+    pd.testing.assert_frame_equal(a[instrument_desc], b[instrument_desc])
+
+
 class TestCountMissingTradingSessions:
   def _create_test_dataframe(self, dates: Sequence[dt.date]) -> pd.DataFrame:
     datetime_index = pd.DatetimeIndex(
@@ -1138,9 +1148,9 @@ class TestCountMissingTradingSessions:
     instrument_desc_to_df = {
       instrument_descs["ADANIENT"]: self._create_test_dataframe(dates)
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     assert len(result.instrument_desc_to_missing_sessions) == 1
     assert (
       len(result.instrument_desc_to_missing_sessions[instrument_descs["ADANIENT"]]) == 0
@@ -1148,7 +1158,7 @@ class TestCountMissingTradingSessions:
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["ADANIENT"]] == 0
     )
-    assert result.all_dates == tuple(sorted(set(dates)))
+    np.testing.assert_array_equal(result.all_dates, np.array(sorted(set(dates))))
 
   def test_no_missing_sessions_multiple_instruments(self):
     instrument_descs = self._create_instrument_descs()
@@ -1158,14 +1168,14 @@ class TestCountMissingTradingSessions:
       instrument_descs["ADANIENT"]: self._create_test_dataframe(dates),
       instrument_descs["ADANIPORTS"]: self._create_test_dataframe(dates),
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     assert len(result.instrument_desc_to_missing_sessions) == 2
     for instrument_desc in instrument_desc_to_df.keys():
       assert len(result.instrument_desc_to_missing_sessions[instrument_desc]) == 0
       assert result.instrument_desc_to_n_missing_sessions[instrument_desc] == 0
-    assert result.all_dates == tuple(sorted(set(dates)))
+    np.testing.assert_array_equal(result.all_dates, np.array(sorted(set(dates))))
 
   def test_missing_sessions_multiple_instruments_different_ranges(self):
     instrument_descs = self._create_instrument_descs()
@@ -1190,9 +1200,9 @@ class TestCountMissingTradingSessions:
       instrument_descs["ADANIENT"]: self._create_test_dataframe(adanient_dates),
       instrument_descs["ADANIPORTS"]: self._create_test_dataframe(adaniports_dates),
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     # ADANIENT should be missing 2023-01-05 (within its range)
     adanient_missing = result.instrument_desc_to_missing_sessions[
       instrument_descs["ADANIENT"]
@@ -1205,7 +1215,9 @@ class TestCountMissingTradingSessions:
       instrument_descs["ADANIPORTS"]
     ]
     assert len(adaniports_missing) == 2
-    assert adaniports_missing == (dt.date(2023, 1, 6), dt.date(2023, 1, 7))
+    np.testing.assert_array_equal(
+      adaniports_missing, np.array([dt.date(2023, 1, 6), dt.date(2023, 1, 7)])
+    )
 
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["ADANIENT"]] == 1
@@ -1213,13 +1225,15 @@ class TestCountMissingTradingSessions:
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["ADANIPORTS"]] == 2
     )
-    assert result.all_dates == tuple(sorted(set(adanient_dates + adaniports_dates)))
+    np.testing.assert_array_equal(
+      result.all_dates, np.array(sorted(set(adanient_dates + adaniports_dates)))
+    )
 
   def test_empty_input(self):
     instrument_desc_to_df = {}
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     assert len(result.instrument_desc_to_missing_sessions) == 0
     assert len(result.instrument_desc_to_n_missing_sessions) == 0
 
@@ -1230,9 +1244,9 @@ class TestCountMissingTradingSessions:
       instrument_descs["ADANIENT"]: self._create_test_dataframe([dt.date(2023, 1, 2)]),
       instrument_descs["NIFTY_IT"]: self._create_test_dataframe([dt.date(2023, 1, 3)]),
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     adanient_missing = result.instrument_desc_to_missing_sessions[
       instrument_descs["ADANIENT"]
     ]
@@ -1242,7 +1256,9 @@ class TestCountMissingTradingSessions:
       instrument_descs["NIFTY_IT"]
     ]
     assert len(nifty_it_missing) == 0
-    assert result.all_dates == (dt.date(2023, 1, 2), dt.date(2023, 1, 3))
+    np.testing.assert_array_equal(
+      result.all_dates, np.array([dt.date(2023, 1, 2), dt.date(2023, 1, 3)])
+    )
 
   def test_non_overlapping_date_ranges(self):
     instrument_descs = self._create_instrument_descs()
@@ -1257,9 +1273,9 @@ class TestCountMissingTradingSessions:
       instrument_descs["ADANIENT"]: self._create_test_dataframe(adanient_dates),
       instrument_descs["ADANIPORTS"]: self._create_test_dataframe(adaniports_dates),
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
     # Each instrument should have no missing sessions within their own ranges
     assert (
       len(result.instrument_desc_to_missing_sessions[instrument_descs["ADANIENT"]]) == 0
@@ -1268,7 +1284,9 @@ class TestCountMissingTradingSessions:
       len(result.instrument_desc_to_missing_sessions[instrument_descs["ADANIPORTS"]])
       == 0
     )
-    assert result.all_dates == tuple(sorted(set(adanient_dates + adaniports_dates)))
+    np.testing.assert_array_equal(
+      result.all_dates, np.array(sorted(set(adanient_dates + adaniports_dates)))
+    )
 
   def test_three_descs(self):
     instrument_descs = self._create_instrument_descs()
@@ -1302,33 +1320,141 @@ class TestCountMissingTradingSessions:
         ]
       ),
     }
-
+    b = copy.deepcopy(instrument_desc_to_df)
     result = uzdc.count_missing_trading_sessions(instrument_desc_to_df)
-    assert result.instrument_desc_to_missing_sessions[instrument_descs["ADANIENT"]] == (
-      dt.date(2023, 1, 5),
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
+    np.testing.assert_array_equal(
+      result.instrument_desc_to_missing_sessions[instrument_descs["ADANIENT"]],
+      np.array([dt.date(2023, 1, 5)]),
     )
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["ADANIENT"]] == 1
     )
-    assert result.instrument_desc_to_missing_sessions[
-      instrument_descs["ADANIPORTS"]
-    ] == (dt.date(2023, 1, 7), dt.date(2023, 1, 10))
+    np.testing.assert_array_equal(
+      result.instrument_desc_to_missing_sessions[instrument_descs["ADANIPORTS"]],
+      np.array([dt.date(2023, 1, 7), dt.date(2023, 1, 10)]),
+    )
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["ADANIPORTS"]] == 2
     )
-    assert result.instrument_desc_to_missing_sessions[instrument_descs["NIFTY_IT"]] == (
-      dt.date(2023, 1, 7),
-      dt.date(2023, 1, 8),
-      dt.date(2023, 1, 10),
+    np.testing.assert_array_equal(
+      result.instrument_desc_to_missing_sessions[instrument_descs["NIFTY_IT"]],
+      np.array([dt.date(2023, 1, 7), dt.date(2023, 1, 8), dt.date(2023, 1, 10)]),
     )
     assert (
       result.instrument_desc_to_n_missing_sessions[instrument_descs["NIFTY_IT"]] == 3
     )
-    assert result.all_dates == (
-      dt.date(2023, 1, 2),
-      dt.date(2023, 1, 5),
-      dt.date(2023, 1, 7),
-      dt.date(2023, 1, 8),
-      dt.date(2023, 1, 10),
-      dt.date(2023, 1, 14),
+    np.testing.assert_array_equal(
+      result.all_dates,
+      np.array(
+        [
+          dt.date(2023, 1, 2),
+          dt.date(2023, 1, 5),
+          dt.date(2023, 1, 7),
+          dt.date(2023, 1, 8),
+          dt.date(2023, 1, 10),
+          dt.date(2023, 1, 14),
+        ]
+      ),
     )
+
+
+class TestCountMissingTradingBars:
+  def _create_test_dataframe(self, timestamps: Sequence[pd.Timestamp]) -> pd.DataFrame:
+    datetime_index = pd.DatetimeIndex(timestamps)
+
+    return pd.DataFrame(
+      {
+        "open": [100.0] * len(timestamps),
+        "high": [105.0] * len(timestamps),
+        "low": [95.0] * len(timestamps),
+        "close": [102.0] * len(timestamps),
+        "volume": [1000] * len(timestamps),
+      },
+      index=datetime_index,
+    )
+
+  def _create_instrument_descs(self) -> Dict[str, sid.InstrumentDesc]:
+    return {
+      "ADANIENT": sid.EquityDesc(market=sid.Market.INDIAN_MARKET, symbol="ADANIENT"),
+      "ADANIPORTS": sid.EquityDesc(
+        market=sid.Market.INDIAN_MARKET, symbol="ADANIPORTS"
+      ),
+      "NIFTY_FIN": sid.IndexDesc(
+        market=sid.Market.INDIAN_MARKET, symbol="NIFTY FIN SERVICE"
+      ),
+      "NIFTY_IT": sid.IndexDesc(market=sid.Market.INDIAN_MARKET, symbol="NIFTY IT"),
+    }
+
+  def test_three_descs(self):
+    instrument_descs = self._create_instrument_descs()
+
+    # Create timestamps for the same day (2023-01-02) at different times
+    # 0 1 2 3 4 5
+    base_date = dt.date(2023, 1, 2)
+    all_timestamps = [
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=3, minute=45, second=59, microsecond=999000),
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=4, minute=15, second=30, microsecond=999000),
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=5, minute=30, second=15, microsecond=999000),
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=6, minute=45, second=45, microsecond=999000),
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=7, minute=0, second=0, microsecond=999000),
+      pd.Timestamp(base_date)
+      .tz_localize("UTC")
+      .replace(hour=8, minute=30, second=30, microsecond=999000),
+    ]
+
+    instrument_desc_to_df = {
+      instrument_descs["ADANIENT"]: self._create_test_dataframe(
+        [
+          all_timestamps[0],  # 03:45:59.999000
+          # all_timestamps[1] missing (04:15:30.999000)
+          all_timestamps[2],  # 05:30:15.999000
+          all_timestamps[3],  # 06:45:45.999000
+          all_timestamps[4],  # 07:00:00.999000
+        ]
+      ),
+      instrument_descs["ADANIPORTS"]: self._create_test_dataframe(
+        [
+          all_timestamps[1],  # 04:15:30.999000
+          # all_timestamps[2] missing (05:30:15.999000)
+          all_timestamps[3],  # 06:45:45.999000
+          # all_timestamps[4] missing (07:00:00.999000)
+          all_timestamps[5],  # 08:30:30.999000
+        ]
+      ),
+      instrument_descs["NIFTY_IT"]: self._create_test_dataframe(
+        [
+          all_timestamps[1],  # 04:15:30.999000
+          # all_timestamps[2] missing (05:30:15.999000)
+          # all_timestamps[3] missing (06:45:45.999000)
+          # all_timestamps[4] missing (07:00:00.999000)
+          all_timestamps[5],  # 08:30:30.999000
+        ]
+      ),
+    }
+    b = copy.deepcopy(instrument_desc_to_df)
+    result = uzdc.count_missing_trading_bars(instrument_desc_to_df)
+    _assert_instrument_desc_to_df_matches(instrument_desc_to_df, b)
+    assert result.instrument_desc_to_missing_bars[instrument_descs["ADANIENT"]].equals(
+      pd.DatetimeIndex([all_timestamps[1]])
+    )
+    assert result.instrument_desc_to_n_missing_bars[instrument_descs["ADANIENT"]] == 1
+    assert result.instrument_desc_to_missing_bars[
+      instrument_descs["ADANIPORTS"]
+    ].equals(pd.DatetimeIndex([all_timestamps[2], all_timestamps[4]]))
+    assert result.instrument_desc_to_n_missing_bars[instrument_descs["ADANIPORTS"]] == 2
+    assert result.instrument_desc_to_missing_bars[instrument_descs["NIFTY_IT"]].equals(
+      pd.DatetimeIndex([all_timestamps[2], all_timestamps[3], all_timestamps[4]])
+    )
+    assert result.instrument_desc_to_n_missing_bars[instrument_descs["NIFTY_IT"]] == 3
+    assert result.all_timestamps.equals(pd.DatetimeIndex(all_timestamps))

@@ -2,8 +2,9 @@
 
 import dataclasses
 import datetime as dt
-from typing import Sequence
+from typing import Callable
 
+import numpy as np
 import pandas as pd
 import pytz
 
@@ -171,8 +172,26 @@ def count_bars_per_trading_day(
 
 @dataclasses.dataclass(frozen=True)
 class CountMissingTradingSessionsResult:
-  instrument_desc_to_missing_sessions: dict[sid.InstrumentDesc, Sequence[dt.date]]
-  all_dates: Sequence[dt.date]
+  instrument_desc_to_missing_sessions: dict[sid.InstrumentDesc, np.ndarray[dt.date]]
+  all_dates: np.ndarray[dt.date]
+
+  # def __post_init__(self):
+  #   for instrument_desc, sessions in self.instrument_desc_to_missing_sessions.items():
+  #     if not isinstance(sessions, np.ndarray):
+  #       raise TypeError(
+  #         f"Expected np.ndarray for missing sessions, got {type(sessions)}"
+  #       )
+  #     if sessions.dtype != object or (
+  #       len(sessions) > 0 and not isinstance(sessions[0], dt.date)
+  #     ):
+  #       raise TypeError("Expected np.ndarray of dt.date objects for missing sessions")
+
+  #   if not isinstance(self.all_dates, np.ndarray):
+  #     raise TypeError(f"Expected np.ndarray for all_dates, got {type(self.all_dates)}")
+  #   if self.all_dates.dtype != object or (
+  #     len(self.all_dates) > 0 and not isinstance(self.all_dates[0], dt.date)
+  #   ):
+  #     raise TypeError("Expected np.ndarray of dt.date objects for all_dates")
 
   @property
   def instrument_desc_to_n_missing_sessions(self) -> dict[sid.InstrumentDesc, int]:
@@ -182,69 +201,80 @@ class CountMissingTradingSessionsResult:
     }
 
 
+@dataclasses.dataclass(frozen=True)
+class CountMissingTradingBarsResult:
+  instrument_desc_to_missing_bars: dict[sid.InstrumentDesc, pd.DatetimeIndex]
+  all_timestamps: pd.DatetimeIndex
+
+  # def __post_init__(self):
+  #   for instrument_desc, bars in self.instrument_desc_to_missing_bars.items():
+  #     if not isinstance(bars, pd.DatetimeIndex):
+  #       raise TypeError(f"Expected pd.DatetimeIndex for missing bars, got {type(bars)}")
+  #   if not isinstance(self.all_timestamps, pd.DatetimeIndex):
+  #     raise TypeError(
+  #       f"Expected pd.DatetimeIndex for all_timestamps, got {type(self.all_timestamps)}"
+  #     )
+
+  @property
+  def instrument_desc_to_n_missing_bars(self) -> dict[sid.InstrumentDesc, int]:
+    return {
+      instrument_desc: len(bars)
+      for instrument_desc, bars in self.instrument_desc_to_missing_bars.items()
+    }
+
+
+def _count_missing_trading_items(
+  instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
+  index_extractor: Callable[[pd.DataFrame], pd.DatetimeIndex],
+) -> tuple[dict[sid.InstrumentDesc, pd.DatetimeIndex], pd.DatetimeIndex]:
+  """Generic function to count missing trading items (sessions or bars)."""
+  # Collect all DatetimeIndexes and union them
+  all_items = pd.DatetimeIndex([])
+  for df in instrument_desc_to_df.values():
+    df_items = index_extractor(df)
+    all_items = all_items.union(df_items)
+  all_items = pd.DatetimeIndex(all_items)
+  instrument_desc_to_missing_items = {}
+  for instrument_desc, df in instrument_desc_to_df.items():
+    df_items = index_extractor(df)
+    df_min_item = df_items.min()
+    df_max_item = df_items.max()
+
+    # Filter all_items to only include items within the instrument's range
+    applicable_all_items = all_items[
+      (all_items >= df_min_item) & (all_items <= df_max_item)
+    ]
+
+    # Find missing items by getting the difference
+    missing_items = applicable_all_items.difference(df_items)
+    instrument_desc_to_missing_items[instrument_desc] = missing_items.sort_values()
+
+  return instrument_desc_to_missing_items, all_items.sort_values()
+
+
 def count_missing_trading_sessions(
   instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
 ) -> CountMissingTradingSessionsResult:
-  all_dates = set()
-  for df in instrument_desc_to_df.values():
-    all_dates.update(df.index.date)
-
-  instrument_desc_to_missing_sessions = {}
-  for instrument_desc, df in instrument_desc_to_df.items():
-    df_dates = set(df.index.date)
-    df_min_date = df.index.date.min()
-    df_max_date = df.index.date.max()
-    applicable_all_dates = {
-      date for date in all_dates if df_min_date <= date <= df_max_date
-    }
-    missing_dates = applicable_all_dates - df_dates
-    instrument_desc_to_missing_sessions[instrument_desc] = tuple(
-      sorted(set(missing_dates))
-    )
-
+  missing_items, all_items = _count_missing_trading_items(
+    instrument_desc_to_df, lambda df: pd.to_datetime(df.index.date)
+  )
+  missing_items = {id: v.date for id, v in missing_items.items()}
   return CountMissingTradingSessionsResult(
-    instrument_desc_to_missing_sessions=instrument_desc_to_missing_sessions,
-    all_dates=tuple(sorted(set(all_dates))),
+    instrument_desc_to_missing_sessions=missing_items,
+    all_dates=all_items.date,
   )
 
 
-###### UNTESTED VERSION THAT LOOKS FOR MISSING BARS INSTEAD OF MISSING SESSIONS #####
-# @dataclasses.dataclass(frozen=True)
-# class CountMissingTradingBarsResult:
-#   instrument_desc_to_missing_bars: dict[sid.InstrumentDesc, Sequence[dt.date]]
-#   all_dates: Sequence[dt.date]
-
-#   @property
-#   def instrument_desc_to_n_missing_bars(self) -> dict[sid.InstrumentDesc, int]:
-#     return {
-#       instrument_desc: len(bars)
-#       for instrument_desc, bars in self.instrument_desc_to_missing_bars.items()
-#     }
-
-
-# def count_missing_trading_bars(
-#   instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
-# ) -> CountMissingTradingBarsResult:
-#   all_dates = set()
-#   for df in instrument_desc_to_df.values():
-#     all_dates.update(df.index)
-
-#   instrument_desc_to_missing_bars = {}
-#   for instrument_desc, df in instrument_desc_to_df.items():
-#     df_dates = set(df.index)
-#     df_min_date = df.index.min()
-#     df_max_date = df.index.max()
-#     applicable_all_dates = {
-#       date for date in all_dates if df_min_date <= date <= df_max_date
-#     }
-#     missing_dates = applicable_all_dates - df_dates
-#     instrument_desc_to_missing_bars[instrument_desc] = tuple(sorted(set(missing_dates)))
-
-#   return CountMissingTradingBarsResult(
-#     instrument_desc_to_missing_bars=instrument_desc_to_missing_bars,
-#     all_dates=tuple(sorted(set(all_dates))),
-#   )
-#################
+def count_missing_trading_bars(
+  instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
+) -> CountMissingTradingBarsResult:
+  missing_items, all_items = _count_missing_trading_items(
+    instrument_desc_to_df, lambda df: df.index
+  )
+  return CountMissingTradingBarsResult(
+    instrument_desc_to_missing_bars=missing_items,
+    all_timestamps=all_items,
+  )
 
 
 @dataclasses.dataclass(frozen=True)
