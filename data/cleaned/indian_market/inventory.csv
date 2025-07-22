@@ -1,56 +1,56 @@
-company_name,industry,symbol,listing_date,type,first_date,last_date,n_unusual_bars_dropped,n_unusual_bars_fixed,n_non_standard_indian_trading_hours_dropped,n_high_fixed,n_low_fixed,percentage_dates_with_less_than_375_bars,n_dates,n_dates_with_less_than_375_bars,percentage_zero_volume_bars,percentage_zero_volume_bars_post_2022,n_zero_volume_bars,n_zero_volume_bars_post_2022,n_bars
-Bajaj Auto Ltd.,Automobile and Auto Components,BAJAJ-AUTO,2008-05-26,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.111,0.006,983,21,882376
-Eicher Motors Ltd.,Automobile and Auto Components,EICHERMOT,2004-09-07,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.123,0.003,1082,11,882370
-Hero MotoCorp Ltd.,Automobile and Auto Components,HEROMOTOCO,2003-04-11,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.027,0.003,238,10,882370
-Mahindra & Mahindra Ltd.,Automobile and Auto Components,M&M,1996-01-03,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.007,0.002,60,5,882376
-Maruti Suzuki India Ltd.,Automobile and Auto Components,MARUTI,2003-07-09,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.001,0.002,12,7,882374
-Tata Motors Ltd.,Automobile and Auto Components,TATAMOTORS,1998-07-22,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.002,9,8,882372
-Bharat Electronics Ltd.,Capital Goods,BEL,2000-07-19,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.15,0.002,1325,6,882378
-Larsen & Toubro Ltd.,Construction,LT,2004-06-23,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.001,0.002,8,5,882375
-Grasim Industries Ltd.,Construction Materials,GRASIM,1995-05-10,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.53,0.019,4674,63,882341
-UltraTech Cement Ltd.,Construction Materials,ULTRACEMCO,2004-08-24,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.051,0.005,452,15,882372
-Asian Paints Ltd.,Consumer Durables,ASIANPAINT,1995-05-31,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.009,0.002,77,7,882379
-Titan Company Ltd.,Consumer Durables,TITAN,2004-09-24,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.069,0.002,610,8,882372
-Eternal Ltd.,Consumer Services,ETERNAL,2021-07-23,equity,2021-07-23,2025-07-18,0,0,240,0,0,0.912,987,9,0.005,0.0,17,1,369523
-Trent Ltd.,Consumer Services,TRENT,2004-06-07,equity,2016-01-04,2025-07-18,0,0,615,0,0,13.328,2356,314,13.557,0.075,119281,245,879844
-Hindustan Unilever Ltd.,Fast Moving Consumer Goods,HINDUNILVR,1995-07-06,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.012,0.003,110,10,882371
-ITC Ltd.,Fast Moving Consumer Goods,ITC,1995-08-23,equity,2016-01-04,2025-07-18,0,0,601,0,0,0.891,2356,21,0.013,0.01,115,32,882348
-Nestle India Ltd.,Fast Moving Consumer Goods,NESTLEIND,2023-08-01,equity,2023-08-01,2025-07-18,0,0,120,0,0,0.821,487,4,0.008,0.008,14,14,182079
-Tata Consumer Products Ltd.,Fast Moving Consumer Goods,TATACONSUM,1998-11-18,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.934,2356,22,0.441,0.003,3889,10,882370
-Axis Bank Ltd.,Financial Services,AXISBANK,1998-11-16,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.001,0.002,8,6,882379
-Bajaj Finserv Ltd.,Financial Services,BAJAJFINSV,2008-05-26,equity,2016-01-04,2025-07-18,0,0,616,0,0,1.019,2356,24,0.919,0.002,8107,6,882370
-Bajaj Finance Ltd.,Financial Services,BAJFINANCE,2003-04-01,equity,2016-01-04,2025-07-18,0,0,541,0,0,0.849,2356,20,0.09,0.002,797,5,882377
-HDFC Bank Ltd.,Financial Services,HDFCBANK,1995-11-08,equity,2016-01-04,2025-07-18,0,0,616,0,1,0.849,2356,20,0.015,0.002,131,8,882371
-HDFC Life Insurance Company Ltd.,Financial Services,HDFCLIFE,2017-11-17,equity,2017-11-17,2025-07-18,0,0,496,0,0,1.056,1894,20,0.032,0.003,230,9,709287
-ICICI Bank Ltd.,Financial Services,ICICIBANK,1997-09-17,equity,2016-01-04,2025-07-18,0,0,615,0,1,0.849,2356,20,0.01,0.002,91,8,882371
-IndusInd Bank Ltd.,Financial Services,INDUSINDBK,1998-01-28,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.014,0.002,125,8,882370
-Jio Financial Services Ltd.,Financial Services,JIOFIN,2023-08-21,equity,2023-08-21,2025-07-18,0,0,120,0,0,0.844,474,4,0.006,0.006,11,11,177169
-Kotak Mahindra Bank Ltd.,Financial Services,KOTAKBANK,1995-12-20,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.009,0.002,76,5,882376
-SBI Life Insurance Company Ltd.,Financial Services,SBILIFE,2017-10-03,equity,2017-10-03,2025-07-18,0,0,555,1,0,2.494,1925,48,0.568,0.005,4096,18,720800
-State Bank of India,Financial Services,SBIN,1995-03-01,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.001,0.002,9,8,882372
-Shriram Finance Ltd.,Financial Services,SHRIRAMFIN,1996-12-11,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.137,0.064,1208,210,882372
-Apollo Hospitals Enterprise Ltd.,Healthcare,APOLLOHOSP,1996-01-10,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.441,0.005,3892,18,882378
-Cipla Ltd.,Healthcare,CIPLA,1995-02-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.021,0.003,183,9,882378
-Dr. Reddy's Laboratories Ltd.,Healthcare,DRREDDY,2003-05-30,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.034,0.01,300,33,882374
-Sun Pharmaceutical Industries Ltd.,Healthcare,SUNPHARMA,1995-02-08,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.891,2356,21,0.001,0.003,12,9,882371
-HCL Technologies Ltd.,Information Technology,HCLTECH,2000-01-06,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.013,0.003,119,10,882371
-Infosys Ltd.,Information Technology,INFY,1995-02-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.01,0.002,90,8,882371
-Tata Consultancy Services Ltd.,Information Technology,TCS,2004-08-25,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.002,0.002,16,8,882372
-Tech Mahindra Ltd.,Information Technology,TECHM,2006-08-28,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.006,0.003,56,9,882372
-Wipro Ltd.,Information Technology,WIPRO,1995-11-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.019,0.003,169,10,882371
-Adani Enterprises Ltd.,Metals & Mining,ADANIENT,1997-06-04,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.934,2356,22,0.235,0.002,2075,7,882320
-Hindalco Industries Ltd.,Metals & Mining,HINDALCO,1997-01-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.011,0.003,93,9,882371
-JSW Steel Ltd.,Metals & Mining,JSWSTEEL,2005-03-23,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.028,0.003,249,9,882376
-Tata Steel Ltd.,Metals & Mining,TATASTEEL,1998-11-18,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.003,11,9,882372
-Coal India Ltd.,Oil Gas & Consumable Fuels,COALINDIA,2010-11-04,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.002,0.002,21,8,882379
-Oil & Natural Gas Corporation Ltd.,Oil Gas & Consumable Fuels,ONGC,1995-07-19,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.002,9,6,882376
-Reliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,1995-11-29,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.001,0.003,10,9,882327
-NTPC Ltd.,Power,NTPC,2004-11-05,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.019,0.002,171,8,882376
-Power Grid Corporation of India Ltd.,Power,POWERGRID,2007-10-05,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.016,0.002,144,6,882376
-Adani Ports and Special Economic Zone Ltd.,Services,ADANIPORTS,2007-11-27,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.006,0.002,53,6,882379
-Bharti Airtel Ltd.,Telecommunication,BHARTIARTL,2002-02-15,equity,2016-01-04,2025-07-18,0,0,616,1,0,0.806,2356,19,0.008,0.002,75,5,882378
-NIFTY AUTO,Automobile and Auto Components,NIFTY AUTO,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882881,328266,882881
-NIFTY FIN SERVICE,Financial Services,NIFTY FIN SERVICE,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882880,328266,882880
-NIFTY IT,Information Technology,NIFTY IT,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882881,328266,882881
-INDIA VIX,,INDIA VIX,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,314,2329,0.849,2356,20,100.0,100.0,882554,328316,882554
-NIFTY 50,,NIFTY 50,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882928,328313,882928
+company_name,industry,symbol,listing_date,type,first_date,last_date,n_unusual_bars_dropped,n_unusual_bars_fixed,n_non_standard_indian_trading_hours_dropped,n_high_fixed,n_low_fixed,percentage_dates_with_less_than_375_bars,n_dates,n_dates_with_less_than_375_bars,percentage_zero_volume_bars,percentage_zero_volume_bars_post_2022,n_zero_volume_bars,n_zero_volume_bars_post_2022,n_bars,n_missing_trading_sessions
+Bajaj Auto Ltd.,Automobile and Auto Components,BAJAJ-AUTO,2008-05-26,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.111,0.006,983,21,882376,0
+Eicher Motors Ltd.,Automobile and Auto Components,EICHERMOT,2004-09-07,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.123,0.003,1082,11,882370,0
+Hero MotoCorp Ltd.,Automobile and Auto Components,HEROMOTOCO,2003-04-11,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.027,0.003,238,10,882370,0
+Mahindra & Mahindra Ltd.,Automobile and Auto Components,M&M,1996-01-03,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.007,0.002,60,5,882376,0
+Maruti Suzuki India Ltd.,Automobile and Auto Components,MARUTI,2003-07-09,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.001,0.002,12,7,882374,0
+Tata Motors Ltd.,Automobile and Auto Components,TATAMOTORS,1998-07-22,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.002,9,8,882372,0
+Bharat Electronics Ltd.,Capital Goods,BEL,2000-07-19,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.15,0.002,1325,6,882378,0
+Larsen & Toubro Ltd.,Construction,LT,2004-06-23,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.001,0.002,8,5,882375,0
+Grasim Industries Ltd.,Construction Materials,GRASIM,1995-05-10,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.53,0.019,4674,63,882341,0
+UltraTech Cement Ltd.,Construction Materials,ULTRACEMCO,2004-08-24,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.051,0.005,452,15,882372,0
+Asian Paints Ltd.,Consumer Durables,ASIANPAINT,1995-05-31,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.009,0.002,77,7,882379,0
+Titan Company Ltd.,Consumer Durables,TITAN,2004-09-24,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.069,0.002,610,8,882372,0
+Eternal Ltd.,Consumer Services,ETERNAL,2021-07-23,equity,2021-07-23,2025-07-18,0,0,240,0,0,0.912,987,9,0.005,0.0,17,1,369523,0
+Trent Ltd.,Consumer Services,TRENT,2004-06-07,equity,2016-01-04,2025-07-18,0,0,615,0,0,13.328,2356,314,13.557,0.075,119281,245,879844,0
+Hindustan Unilever Ltd.,Fast Moving Consumer Goods,HINDUNILVR,1995-07-06,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.012,0.003,110,10,882371,0
+ITC Ltd.,Fast Moving Consumer Goods,ITC,1995-08-23,equity,2016-01-04,2025-07-18,0,0,601,0,0,0.891,2356,21,0.013,0.01,115,32,882348,0
+Nestle India Ltd.,Fast Moving Consumer Goods,NESTLEIND,2023-08-01,equity,2023-08-01,2025-07-18,0,0,120,0,0,0.821,487,4,0.008,0.008,14,14,182079,0
+Tata Consumer Products Ltd.,Fast Moving Consumer Goods,TATACONSUM,1998-11-18,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.934,2356,22,0.441,0.003,3889,10,882370,0
+Axis Bank Ltd.,Financial Services,AXISBANK,1998-11-16,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.001,0.002,8,6,882379,0
+Bajaj Finserv Ltd.,Financial Services,BAJAJFINSV,2008-05-26,equity,2016-01-04,2025-07-18,0,0,616,0,0,1.019,2356,24,0.919,0.002,8107,6,882370,0
+Bajaj Finance Ltd.,Financial Services,BAJFINANCE,2003-04-01,equity,2016-01-04,2025-07-18,0,0,541,0,0,0.849,2356,20,0.09,0.002,797,5,882377,0
+HDFC Bank Ltd.,Financial Services,HDFCBANK,1995-11-08,equity,2016-01-04,2025-07-18,0,0,616,0,1,0.849,2356,20,0.015,0.002,131,8,882371,0
+HDFC Life Insurance Company Ltd.,Financial Services,HDFCLIFE,2017-11-17,equity,2017-11-17,2025-07-18,0,0,496,0,0,1.056,1894,20,0.032,0.003,230,9,709287,0
+ICICI Bank Ltd.,Financial Services,ICICIBANK,1997-09-17,equity,2016-01-04,2025-07-18,0,0,615,0,1,0.849,2356,20,0.01,0.002,91,8,882371,0
+IndusInd Bank Ltd.,Financial Services,INDUSINDBK,1998-01-28,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.014,0.002,125,8,882370,0
+Jio Financial Services Ltd.,Financial Services,JIOFIN,2023-08-21,equity,2023-08-21,2025-07-18,0,0,120,0,0,0.844,474,4,0.006,0.006,11,11,177169,0
+Kotak Mahindra Bank Ltd.,Financial Services,KOTAKBANK,1995-12-20,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.009,0.002,76,5,882376,0
+SBI Life Insurance Company Ltd.,Financial Services,SBILIFE,2017-10-03,equity,2017-10-03,2025-07-18,0,0,555,1,0,2.494,1925,48,0.568,0.005,4096,18,720800,0
+State Bank of India,Financial Services,SBIN,1995-03-01,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.001,0.002,9,8,882372,0
+Shriram Finance Ltd.,Financial Services,SHRIRAMFIN,1996-12-11,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.137,0.064,1208,210,882372,0
+Apollo Hospitals Enterprise Ltd.,Healthcare,APOLLOHOSP,1996-01-10,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.441,0.005,3892,18,882378,0
+Cipla Ltd.,Healthcare,CIPLA,1995-02-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.806,2356,19,0.021,0.003,183,9,882378,0
+Dr. Reddy's Laboratories Ltd.,Healthcare,DRREDDY,2003-05-30,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.034,0.01,300,33,882374,0
+Sun Pharmaceutical Industries Ltd.,Healthcare,SUNPHARMA,1995-02-08,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.891,2356,21,0.001,0.003,12,9,882371,0
+HCL Technologies Ltd.,Information Technology,HCLTECH,2000-01-06,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.013,0.003,119,10,882371,0
+Infosys Ltd.,Information Technology,INFY,1995-02-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.01,0.002,90,8,882371,0
+Tata Consultancy Services Ltd.,Information Technology,TCS,2004-08-25,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.002,0.002,16,8,882372,0
+Tech Mahindra Ltd.,Information Technology,TECHM,2006-08-28,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.849,2356,20,0.006,0.003,56,9,882372,0
+Wipro Ltd.,Information Technology,WIPRO,1995-11-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.019,0.003,169,10,882371,0
+Adani Enterprises Ltd.,Metals & Mining,ADANIENT,1997-06-04,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.934,2356,22,0.235,0.002,2075,7,882320,0
+Hindalco Industries Ltd.,Metals & Mining,HINDALCO,1997-01-08,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.011,0.003,93,9,882371,0
+JSW Steel Ltd.,Metals & Mining,JSWSTEEL,2005-03-23,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.028,0.003,249,9,882376,0
+Tata Steel Ltd.,Metals & Mining,TATASTEEL,1998-11-18,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.003,11,9,882372,0
+Coal India Ltd.,Oil Gas & Consumable Fuels,COALINDIA,2010-11-04,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.002,0.002,21,8,882379,0
+Oil & Natural Gas Corporation Ltd.,Oil Gas & Consumable Fuels,ONGC,1995-07-19,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.001,0.002,9,6,882376,0
+Reliance Industries Ltd.,Oil Gas & Consumable Fuels,RELIANCE,1995-11-29,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.891,2356,21,0.001,0.003,10,9,882327,0
+NTPC Ltd.,Power,NTPC,2004-11-05,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.019,0.002,171,8,882376,0
+Power Grid Corporation of India Ltd.,Power,POWERGRID,2007-10-05,equity,2016-01-04,2025-07-18,0,0,616,0,0,0.849,2356,20,0.016,0.002,144,6,882376,0
+Adani Ports and Special Economic Zone Ltd.,Services,ADANIPORTS,2007-11-27,equity,2016-01-04,2025-07-18,0,0,615,0,0,0.806,2356,19,0.006,0.002,53,6,882379,0
+Bharti Airtel Ltd.,Telecommunication,BHARTIARTL,2002-02-15,equity,2016-01-04,2025-07-18,0,0,616,1,0,0.806,2356,19,0.008,0.002,75,5,882378,0
+NIFTY AUTO,Automobile and Auto Components,NIFTY AUTO,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882881,328266,882881,0
+NIFTY FIN SERVICE,Financial Services,NIFTY FIN SERVICE,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882880,328266,882880,0
+NIFTY IT,Information Technology,NIFTY IT,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882881,328266,882881,0
+INDIA VIX,,INDIA VIX,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,314,2329,0.849,2356,20,100.0,100.0,882554,328316,882554,1
+NIFTY 50,,NIFTY 50,2014-01-01,index,2016-01-01,2025-07-18,0,0,615,0,0,0.849,2357,20,100.0,100.0,882928,328313,882928,0

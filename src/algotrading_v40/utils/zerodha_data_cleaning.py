@@ -2,9 +2,12 @@
 
 import dataclasses
 import datetime as dt
+from typing import Sequence
 
 import pandas as pd
 import pytz
+
+import algotrading_v40.structures.instrument_desc as sid
 
 
 @dataclasses.dataclass(frozen=True)
@@ -166,34 +169,82 @@ def count_bars_per_trading_day(
   )
 
 
+@dataclasses.dataclass(frozen=True)
+class CountMissingTradingSessionsResult:
+  instrument_desc_to_missing_sessions: dict[sid.InstrumentDesc, Sequence[dt.date]]
+  all_dates: Sequence[dt.date]
+
+  @property
+  def instrument_desc_to_n_missing_sessions(self) -> dict[sid.InstrumentDesc, int]:
+    return {
+      instrument_desc: len(sessions)
+      for instrument_desc, sessions in self.instrument_desc_to_missing_sessions.items()
+    }
+
+
+def count_missing_trading_sessions(
+  instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
+) -> CountMissingTradingSessionsResult:
+  all_dates = set()
+  for df in instrument_desc_to_df.values():
+    all_dates.update(df.index.date)
+
+  instrument_desc_to_missing_sessions = {}
+  for instrument_desc, df in instrument_desc_to_df.items():
+    df_dates = set(df.index.date)
+    df_min_date = df.index.date.min()
+    df_max_date = df.index.date.max()
+    applicable_all_dates = {
+      date for date in all_dates if df_min_date <= date <= df_max_date
+    }
+    missing_dates = applicable_all_dates - df_dates
+    instrument_desc_to_missing_sessions[instrument_desc] = tuple(
+      sorted(set(missing_dates))
+    )
+
+  return CountMissingTradingSessionsResult(
+    instrument_desc_to_missing_sessions=instrument_desc_to_missing_sessions,
+    all_dates=tuple(sorted(set(all_dates))),
+  )
+
+
+###### UNTESTED VERSION THAT LOOKS FOR MISSING BARS INSTEAD OF MISSING SESSIONS #####
 # @dataclasses.dataclass(frozen=True)
-# class CountMissingTradingSessionsResult:
-#   symbol_to_missing_sessions: dict[str, Sequence[dt.date]]
+# class CountMissingTradingBarsResult:
+#   instrument_desc_to_missing_bars: dict[sid.InstrumentDesc, Sequence[dt.date]]
+#   all_dates: Sequence[dt.date]
 
 #   @property
-#   def symbol_to_n_missing_sessions(self) -> dict[str, int]:
+#   def instrument_desc_to_n_missing_bars(self) -> dict[sid.InstrumentDesc, int]:
 #     return {
-#       symbol: len(sessions)
-#       for symbol, sessions in self.symbol_to_missing_sessions.items()
+#       instrument_desc: len(bars)
+#       for instrument_desc, bars in self.instrument_desc_to_missing_bars.items()
 #     }
 
 
-# def count_missing_trading_sessions(
-#   symbol_to_df: dict[str, pd.DataFrame],
-# ) -> CountMissingTradingSessionsResult:
+# def count_missing_trading_bars(
+#   instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame],
+# ) -> CountMissingTradingBarsResult:
 #   all_dates = set()
-#   for df in symbol_to_df.values():
-#     all_dates.update(df.index.date)  # type: ignore
+#   for df in instrument_desc_to_df.values():
+#     all_dates.update(df.index)
 
-#   symbol_to_missing_sessions = {}
-#   for symbol, df in symbol_to_df.items():
-#     df_dates = set(df.index.date)  # type: ignore
-#     missing_dates = all_dates - df_dates
-#     symbol_to_missing_sessions[symbol] = tuple(sorted(missing_dates))
+#   instrument_desc_to_missing_bars = {}
+#   for instrument_desc, df in instrument_desc_to_df.items():
+#     df_dates = set(df.index)
+#     df_min_date = df.index.min()
+#     df_max_date = df.index.max()
+#     applicable_all_dates = {
+#       date for date in all_dates if df_min_date <= date <= df_max_date
+#     }
+#     missing_dates = applicable_all_dates - df_dates
+#     instrument_desc_to_missing_bars[instrument_desc] = tuple(sorted(set(missing_dates)))
 
-#   return CountMissingTradingSessionsResult(
-#     symbol_to_missing_sessions=symbol_to_missing_sessions,
+#   return CountMissingTradingBarsResult(
+#     instrument_desc_to_missing_bars=instrument_desc_to_missing_bars,
+#     all_dates=tuple(sorted(set(all_dates))),
 #   )
+#################
 
 
 @dataclasses.dataclass(frozen=True)
