@@ -65,6 +65,7 @@ def set_index_to_bar_close_timestamp(df: pd.DataFrame) -> pd.DataFrame:
   df["date"] = df["date"] + pd.Timedelta(seconds=59.999)
   df["date"] = df["date"].dt.tz_convert("UTC")
   df = df.set_index("date", drop=True)
+  df.index.name = "bar_close_timestamp"
   return df
 
 
@@ -275,53 +276,3 @@ def count_missing_trading_bars(
     instrument_desc_to_missing_bars=missing_items,
     all_timestamps=all_items,
   )
-
-
-@dataclasses.dataclass(frozen=True)
-class AnalyzeSeriesQualityResult:
-  n_bad_values: int
-  n_zeros: int
-  n_negatives: int
-  n_bad_values_at_start: int
-  n_bad_values_at_end: int
-
-
-def analyze_numeric_series_quality(s: pd.Series) -> AnalyzeSeriesQualityResult:
-  import numpy as np
-
-  if not pd.api.types.is_numeric_dtype(s):
-    raise ValueError("Series must be numeric")
-
-  bad_mask = ~np.isfinite(s.to_numpy())
-  good_mask = ~bad_mask
-
-  n_bad_values = bad_mask.sum()
-
-  good_values = s[good_mask]
-  n_zeros = (good_values == 0).sum()
-  n_negatives = (good_values < 0).sum()
-
-  cumsum_good = (~bad_mask).cumsum()
-  n_bad_values_at_start = (cumsum_good == 0).sum()
-
-  cumsum_good_reversed = (~bad_mask[::-1]).cumsum()
-  n_bad_values_at_end = (cumsum_good_reversed == 0).sum()
-
-  return AnalyzeSeriesQualityResult(
-    n_bad_values=int(n_bad_values),
-    n_zeros=int(n_zeros),
-    n_negatives=int(n_negatives),
-    n_bad_values_at_start=int(n_bad_values_at_start),
-    n_bad_values_at_end=int(n_bad_values_at_end),
-  )
-
-
-def analyse_numeric_columns_quality(
-  df: pd.DataFrame,
-) -> dict[str, AnalyzeSeriesQualityResult]:
-  result = {}
-  for col in df.columns:
-    if not pd.api.types.is_numeric_dtype(df[col]):
-      continue
-    result[col] = analyze_numeric_series_quality(df[col])  # type: ignore
-  return result
