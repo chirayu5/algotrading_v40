@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytz
 
-import algotrading_v40.structures.data as sd
+import algotrading_v40.utils.df as udf
 
 
 def create_trading_datetime_index(
@@ -45,27 +45,6 @@ def create_trading_datetime_index(
 
 
 @dataclasses.dataclass(frozen=True)
-class GMCIDResult:
-  most_common_index_delta: int | None  # in minutes
-  index_delta_distribution: pd.Series
-
-
-def get_most_common_index_delta(index: pd.DatetimeIndex) -> GMCIDResult:
-  """Get the most common index delta in minutes."""
-  if len(index) <= 1:
-    return GMCIDResult(
-      most_common_index_delta=None,
-      index_delta_distribution=pd.Series([]),
-    )
-  index_deltas = ((index[1:] - index[:-1]).total_seconds() // 60).astype(int)
-  vcs = index_deltas.value_counts(dropna=True).sort_values(ascending=False)
-  return GMCIDResult(
-    most_common_index_delta=int(vcs.index[0]),
-    index_delta_distribution=vcs,
-  )
-
-
-@dataclasses.dataclass(frozen=True)
 class GBMParams:
   """
   dS(t) = mu * S(t) * dt + sigma * S(t) * dW(t)
@@ -82,7 +61,7 @@ class GBMParams:
 def fit_gbm(prices: pd.Series) -> GBMParams:
   # If index is not a DatetimeIndex, get_most_common_index_delta will error.
   # So no need to check for DatetimeIndex here.
-  index_delta = get_most_common_index_delta(prices.index).most_common_index_delta  # type: ignore
+  index_delta = udf.get_most_common_index_delta(prices.index).most_common_index_delta  # type: ignore
   # Code should error if index_delta is None.
   # So ignore the type error here.
   dt = index_delta / (365 * 24 * 60)  # type: ignore
@@ -149,47 +128,47 @@ class SyntheticDataConfig:
       )
 
 
-class SyntheticDataAccessor:
-  def __init__(self, symbols: list[str] | dict[str, SyntheticDataConfig]):
-    if isinstance(symbols, list):
-      default_gbm_params = GBMParams(
-        S0=np.random.uniform(10, 1000),
-        mu=np.random.uniform(-6, 6),
-        sigma=np.random.uniform(0.1, 0.6),
-        dt=1
-        / (
-          365 * 24 * 60
-        ),  # create_trading_datetime_index always returns 1 minute intervals
-      )
-      self.symbols = {
-        symbol: SyntheticDataConfig(
-          drop_fraction=None,  # no drop by default
-          gbm_params=default_gbm_params,
-        )
-        for symbol in symbols
-      }
-    else:
-      self.symbols = symbols
+# class SyntheticDataAccessor:
+#   def __init__(self, symbols: list[str] | dict[str, SyntheticDataConfig]):
+#     if isinstance(symbols, list):
+#       default_gbm_params = GBMParams(
+#         S0=np.random.uniform(10, 1000),
+#         mu=np.random.uniform(-6, 6),
+#         sigma=np.random.uniform(0.1, 0.6),
+#         dt=1
+#         / (
+#           365 * 24 * 60
+#         ),  # create_trading_datetime_index always returns 1 minute intervals
+#       )
+#       self.symbols = {
+#         symbol: SyntheticDataConfig(
+#           drop_fraction=None,  # no drop by default
+#           gbm_params=default_gbm_params,
+#         )
+#         for symbol in symbols
+#       }
+#     else:
+#       self.symbols = symbols
 
-  def get(self, start_date: dt.date, end_date: dt.date) -> sd.Data:
-    symbol_to_df = {}
-    for symbol, config in self.symbols.items():
-      symbol_to_df[symbol] = self._get_ohlc(start_date, end_date, config)
-    return sd.Data.create_from_symbol_to_df(symbol_to_df)
+#   def get(self, start_date: dt.date, end_date: dt.date) -> sd.Data:
+#     symbol_to_df = {}
+#     for symbol, config in self.symbols.items():
+#       symbol_to_df[symbol] = self._get_ohlc(start_date, end_date, config)
+#     return sd.Data.create_from_symbol_to_df(symbol_to_df)
 
-  def _get_ohlc(
-    self,
-    start_date: dt.date,
-    end_date: dt.date,
-    config: SyntheticDataConfig,
-  ) -> pd.DataFrame:
-    index = create_trading_datetime_index(start_date, end_date)
-    df_ohlc = simulate_gbm_ohlc(
-      gbm_params=config.gbm_params,
-      N=len(index),
-    )
-    df_ohlc.index = index
-    if config.drop_fraction is not None:
-      df_ohlc = df_ohlc.sample(frac=1 - config.drop_fraction)
-      df_ohlc.sort_index(inplace=True)  # sample() shuffles the index
-    return df_ohlc
+#   def _get_ohlc(
+#     self,
+#     start_date: dt.date,
+#     end_date: dt.date,
+#     config: SyntheticDataConfig,
+#   ) -> pd.DataFrame:
+#     index = create_trading_datetime_index(start_date, end_date)
+#     df_ohlc = simulate_gbm_ohlc(
+#       gbm_params=config.gbm_params,
+#       N=len(index),
+#     )
+#     df_ohlc.index = index
+#     if config.drop_fraction is not None:
+#       df_ohlc = df_ohlc.sample(frac=1 - config.drop_fraction)
+#       df_ohlc.sort_index(inplace=True)  # sample() shuffles the index
+#     return df_ohlc

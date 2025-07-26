@@ -65,3 +65,26 @@ def analyse_numeric_columns_quality(
       continue
     result[col] = analyze_numeric_series_quality(df[col])  # type: ignore
   return result
+
+
+@dataclasses.dataclass(frozen=True)
+class GetMostCommonIndexDeltaResult:
+  most_common_index_delta: int | None  # in minutes
+  index_delta_distribution: pd.Series
+
+
+def get_most_common_index_delta(
+  index: pd.DatetimeIndex,
+) -> GetMostCommonIndexDeltaResult:
+  """Get the most common index delta in minutes."""
+  if len(index) <= 1:
+    return GetMostCommonIndexDeltaResult(
+      most_common_index_delta=None,
+      index_delta_distribution=pd.Series([]),
+    )
+  index_deltas = ((index[1:] - index[:-1]).total_seconds() // 60).astype(int)
+  vcs = index_deltas.value_counts(dropna=True).sort_values(ascending=False)
+  return GetMostCommonIndexDeltaResult(
+    most_common_index_delta=int(vcs.index[0]),
+    index_delta_distribution=vcs,
+  )

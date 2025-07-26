@@ -521,3 +521,75 @@ class TestAnalyseNumericColumnsQuality:
     result["col4"].n_negatives == 0
     result["col4"].n_bad_values_at_start == 3
     result["col4"].n_bad_values_at_end == 3
+
+
+class TestGetMostCommonIndexDelta:
+  def test_empty_index(self):
+    index = pd.DatetimeIndex([])
+    result = udf.get_most_common_index_delta(index)
+
+    assert result.most_common_index_delta is None
+    pd.testing.assert_series_equal(result.index_delta_distribution, pd.Series([]))
+
+  def test_single_element(self):
+    index = pd.DatetimeIndex(["2024-01-01 09:15:59.999"])
+    result = udf.get_most_common_index_delta(index)
+
+    assert result.most_common_index_delta is None
+    pd.testing.assert_series_equal(result.index_delta_distribution, pd.Series([]))
+
+  def test_uniform_intervals(self):
+    index = pd.DatetimeIndex(
+      [
+        "2024-01-01 09:15:59.999",
+        "2024-01-01 09:16:59.999",
+        "2024-01-01 09:17:59.999",
+        "2024-01-01 09:18:59.999",
+      ]
+    )
+    result = udf.get_most_common_index_delta(index)
+    assert result.most_common_index_delta == 1
+    pd.testing.assert_series_equal(
+      result.index_delta_distribution, pd.Series([3], index=[1]), check_names=False
+    )
+
+  def test_mixed_intervals(self):
+    index = pd.DatetimeIndex(
+      [
+        "2024-01-01 09:15:59.999",
+        "2024-01-01 09:17:59.999",
+        "2024-01-01 09:19:59.999",
+        "2024-01-01 09:22:59.999",
+        "2024-01-01 09:24:59.999",
+      ]
+    )
+    result = udf.get_most_common_index_delta(index)
+
+    assert result.most_common_index_delta == 2
+    pd.testing.assert_series_equal(
+      result.index_delta_distribution,
+      pd.Series([3, 1], index=[2, 3]),
+      check_names=False,
+    )
+
+  def test_tie_returns_first(self):
+    index = pd.DatetimeIndex(
+      [
+        "2024-01-01 09:15:59.999",
+        "2024-01-01 09:17:59.999",
+        "2024-01-01 09:20:59.999",
+      ]
+    )
+    result = udf.get_most_common_index_delta(index)
+    assert result.most_common_index_delta == 2
+    pd.testing.assert_series_equal(
+      result.index_delta_distribution,
+      pd.Series([1, 1], index=[2, 3]),
+      check_names=False,
+    )
+
+  def test_non_datetime_index(self):
+    index = pd.Index([1, 2, 3])
+    # non-datetime index should error
+    with pytest.raises(Exception):
+      udf.get_most_common_index_delta(index)  # type: ignore
