@@ -238,6 +238,7 @@ class TestGetSyntheticData:
       df = data.for_instrument_desc(inst)
       assert df.index.is_unique
       assert df.index.is_monotonic_increasing
+      assert df.index.name == "bar_close_timestamp"
       assert isinstance(df, pd.DataFrame)
       assert list(df.columns) == ["open", "high", "low", "close"]
       assert isinstance(df.index, pd.DatetimeIndex)
@@ -323,6 +324,7 @@ class TestGetSyntheticData:
     data = das.get_synthetic_data(inst_and_cfg, date_range)
 
     df_COLPAL = data.for_instrument_desc(inst_COLPAL)
+    assert df_COLPAL.index.name == "bar_close_timestamp"
     assert df_COLPAL.index.is_unique
     assert df_COLPAL.index.is_monotonic_increasing
     assert len(df_COLPAL) == 375 * 2, (

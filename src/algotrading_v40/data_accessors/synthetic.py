@@ -45,7 +45,7 @@ def create_trading_datetime_index(
 
     current_date += dt.timedelta(days=1)
 
-  return pd.DatetimeIndex(all_dates, tz=utc)
+  return pd.DatetimeIndex(all_dates, tz=utc, name="bar_close_timestamp")
 
 
 @dataclasses.dataclass(frozen=True)
