@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import pytz
 
-import algotrading_v40.data_accessors.synthetic_data_accessor as dasda
+import algotrading_v40.data_accessors.synthetic as das
 import algotrading_v40.structures.data as sd
 import algotrading_v40.structures.date_range as sdr
 import algotrading_v40.structures.instrument_desc as sid
@@ -23,7 +23,7 @@ class TestCreateTradingDatetimeIndex:
     start_date = dt.date(2024, 1, 2)
     end_date = dt.date(2024, 1, 2)
 
-    result = dasda.create_trading_datetime_index(start_date, end_date)
+    result = das.create_trading_datetime_index(start_date, end_date)
     first_time: pd.Timestamp = result[0]  # type: ignore
     last_time: pd.Timestamp = result[-1]  # type: ignore
 
@@ -43,7 +43,7 @@ class TestCreateTradingDatetimeIndex:
     end_date = dt.date(2024, 1, 7)
     assert start_date.weekday() == 5
     assert end_date.weekday() == 6
-    result = dasda.create_trading_datetime_index(start_date, end_date)
+    result = das.create_trading_datetime_index(start_date, end_date)
     assert result.is_unique
     assert result.is_monotonic_increasing
     assert len(result) == 0
@@ -52,7 +52,7 @@ class TestCreateTradingDatetimeIndex:
     start_date = dt.date(2024, 1, 1)  # monday
     end_date = dt.date(2024, 1, 7)  # sunday
 
-    result = dasda.create_trading_datetime_index(start_date, end_date)
+    result = das.create_trading_datetime_index(start_date, end_date)
     assert result.is_unique
     assert result.is_monotonic_increasing
     assert isinstance(result, pd.DatetimeIndex)
@@ -66,7 +66,7 @@ class TestCreateTradingDatetimeIndex:
     start_date = dt.date(2024, 1, 5)
     end_date = dt.date(2024, 1, 3)
 
-    result = dasda.create_trading_datetime_index(start_date, end_date)
+    result = das.create_trading_datetime_index(start_date, end_date)
     assert result.is_unique
     assert result.is_monotonic_increasing
     assert len(result) == 0
@@ -75,7 +75,7 @@ class TestCreateTradingDatetimeIndex:
     start_date = dt.date(2024, 1, 2)
     end_date = dt.date(2024, 1, 2)
 
-    result = dasda.create_trading_datetime_index(start_date, end_date)
+    result = das.create_trading_datetime_index(start_date, end_date)
     assert result.is_unique
     assert result.is_monotonic_increasing
     first_time: pd.Timestamp = result[0]  # type: ignore
@@ -104,29 +104,29 @@ class TestGBMEngine:
     yields parameters that are close to the true parameters.
     """
     set_seed(42)
-    index_synth = dasda.create_trading_datetime_index(
+    index_synth = das.create_trading_datetime_index(
       dt.date(2024, 1, 1), dt.date(2034, 1, 1)
     )
 
     # mu < 0
-    gbm_params = dasda.GBMParams(S0=100, mu=-7, sigma=0.2, dt=1 / (365 * 24 * 60))
-    prices_synth = dasda.simulate_gbm_path(gbm_params, len(index_synth))
+    gbm_params = das.GBMParams(S0=100, mu=-7, sigma=0.2, dt=1 / (365 * 24 * 60))
+    prices_synth = das.simulate_gbm_path(gbm_params, len(index_synth))
     ps = pd.Series(prices_synth, index=index_synth)
     assert ps.index.is_unique
     assert ps.index.is_monotonic_increasing
-    gbm_params_synth = dasda.fit_gbm(ps)
+    gbm_params_synth = das.fit_gbm(ps)
     assert np.isclose(gbm_params_synth.mu, -7.216493651775861)
     assert np.isclose(gbm_params_synth.sigma, 0.20006683409737558)
     assert np.isclose(gbm_params_synth.S0, 100)
     assert np.isclose(gbm_params_synth.dt, 1 / (365 * 24 * 60))
 
     # mu > 0
-    gbm_params = dasda.GBMParams(S0=100, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60))
-    prices_synth = dasda.simulate_gbm_path(gbm_params, len(index_synth))
+    gbm_params = das.GBMParams(S0=100, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60))
+    prices_synth = das.simulate_gbm_path(gbm_params, len(index_synth))
     ps = pd.Series(prices_synth, index=index_synth)
     assert ps.index.is_unique
     assert ps.index.is_monotonic_increasing
-    gbm_params_synth = dasda.fit_gbm(ps)
+    gbm_params_synth = das.fit_gbm(ps)
     assert np.isclose(gbm_params_synth.mu, 4.9504780792693515)
     assert np.isclose(gbm_params_synth.sigma, 0.20022561579168582)
     assert np.isclose(gbm_params_synth.S0, 100)
@@ -139,33 +139,33 @@ class TestGBMEngine:
     annualized version of the parameters.
     """
     set_seed(42)
-    index_synth = dasda.create_trading_datetime_index(
+    index_synth = das.create_trading_datetime_index(
       dt.date(2024, 1, 1), dt.date(2034, 1, 1)
     )
 
     # mu < 0
-    gbm_params = dasda.GBMParams(S0=100, mu=-7, sigma=0.2, dt=1 / (365 * 24 * 60))
-    prices_synth = dasda.simulate_gbm_path(gbm_params, len(index_synth))
+    gbm_params = das.GBMParams(S0=100, mu=-7, sigma=0.2, dt=1 / (365 * 24 * 60))
+    prices_synth = das.simulate_gbm_path(gbm_params, len(index_synth))
     ps = pd.Series(prices_synth, index=index_synth)
     ps_17min = ps[::17]
     assert ps_17min.index.is_unique  # type: ignore
     assert ps_17min.index.is_monotonic_increasing  # type: ignore
     assert np.isclose(len(ps) / len(ps_17min), 17, atol=1e-2)
-    gbm_params_synth = dasda.fit_gbm(ps_17min)  # type: ignore
+    gbm_params_synth = das.fit_gbm(ps_17min)  # type: ignore
     assert np.isclose(gbm_params_synth.mu, -7.216021693375584)
     assert np.isclose(gbm_params_synth.sigma, 0.2001085469048804)
     assert np.isclose(gbm_params_synth.S0, 100)
     assert np.isclose(gbm_params_synth.dt, 17 / (365 * 24 * 60))
 
     # mu > 0
-    gbm_params = dasda.GBMParams(S0=100, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60))
-    prices_synth = dasda.simulate_gbm_path(gbm_params, len(index_synth))
+    gbm_params = das.GBMParams(S0=100, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60))
+    prices_synth = das.simulate_gbm_path(gbm_params, len(index_synth))
     ps = pd.Series(prices_synth, index=index_synth)
     ps_23min = ps[::23]
     assert ps_23min.index.is_unique  # type: ignore
     assert ps_23min.index.is_monotonic_increasing  # type: ignore
     assert np.isclose(len(ps) / len(ps_23min), 23, atol=1e-2)
-    gbm_params_synth = dasda.fit_gbm(ps_23min)  # type: ignore
+    gbm_params_synth = das.fit_gbm(ps_23min)  # type: ignore
     assert np.isclose(gbm_params_synth.mu, 4.949855106666751)
     assert np.isclose(gbm_params_synth.sigma, 0.2000650290117161)
     assert np.isclose(gbm_params_synth.S0, 100)
@@ -175,7 +175,7 @@ class TestGBMEngine:
     """Test that ohlc_from_path correctly converts a price path to OHLC data."""
     # Test with a simple ascending path
     path = np.array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
-    ohlc = dasda.ohlc_from_path(path, bucket_size=5)
+    ohlc = das.ohlc_from_path(path, bucket_size=5)
     expected_ohlc = pd.DataFrame(
       {"open": [10, 15], "high": [14, 19], "low": [10, 15], "close": [14, 19]}
     )
@@ -183,7 +183,7 @@ class TestGBMEngine:
 
     # Test with a more complex path
     path = np.array([100, 105, 95, 110, 90, 120, 85, 115, 125, 100])
-    ohlc = dasda.ohlc_from_path(path, bucket_size=5)
+    ohlc = das.ohlc_from_path(path, bucket_size=5)
     expected_ohlc = pd.DataFrame(
       {"open": [100, 120], "high": [110, 125], "low": [90, 85], "close": [90, 100]}
     )
@@ -191,7 +191,7 @@ class TestGBMEngine:
 
     # Test with bucket_size = 1
     path = np.array([50, 60, 70])
-    ohlc = dasda.ohlc_from_path(path, bucket_size=1)
+    ohlc = das.ohlc_from_path(path, bucket_size=1)
     expected_ohlc = pd.DataFrame(
       {
         "open": [50, 60, 70],
@@ -205,11 +205,11 @@ class TestGBMEngine:
     # Test assertion error for non-divisible path length
     path = np.array([1, 2, 3, 4, 5])
     with pytest.raises(ValueError):
-      dasda.ohlc_from_path(path, bucket_size=3)
+      das.ohlc_from_path(path, bucket_size=3)
 
     # Test empty path
     path = np.array([])
-    ohlc = dasda.ohlc_from_path(path, bucket_size=3)
+    ohlc = das.ohlc_from_path(path, bucket_size=3)
     expected_ohlc = pd.DataFrame(
       {
         "open": [],
@@ -231,7 +231,7 @@ class TestGetSyntheticData:
     end_date = dt.date(2023, 1, 9)  # Monday of next week
     date_range = sdr.DateRange(start_date, end_date)
 
-    data = dasda.get_synthetic_data(instrument_descs, date_range)
+    data = das.get_synthetic_data(instrument_descs, date_range)
     assert isinstance(data, sd.Data)
     assert {d.symbol for d in data.available_instrument_descs()} == set(symbols)
     for inst in instrument_descs:
@@ -272,11 +272,11 @@ class TestGetSyntheticData:
       )  # the weekend gap is 1066 minutes (17 hours 46 minutes) + 2 days (48 hours)
 
     single_inst = sid.EquityDesc(sid.Market.INDIAN_MARKET, "SINGLE")
-    single_data = dasda.get_synthetic_data([single_inst], date_range)
+    single_data = das.get_synthetic_data([single_inst], date_range)
     assert len(single_data.available_instrument_descs()) == 1
     assert single_data.available_instrument_descs()[0] == single_inst
 
-    empty_data = dasda.get_synthetic_data([], date_range)
+    empty_data = das.get_synthetic_data([], date_range)
     assert len(empty_data.available_instrument_descs()) == 0
 
   def test_custom_config(self):
@@ -284,19 +284,19 @@ class TestGetSyntheticData:
 
     # test that bad configs raise errors
     with pytest.raises(ValueError):
-      dasda.SyntheticDataConfig(
+      das.SyntheticDataConfig(
         drop_fraction=1.0,
-        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
+        gbm_params=das.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
       )
     with pytest.raises(ValueError):
-      dasda.SyntheticDataConfig(
+      das.SyntheticDataConfig(
         drop_fraction=-0.1,
-        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
+        gbm_params=das.GBMParams(S0=100, mu=0, sigma=0.2, dt=1 / (365 * 24 * 60)),
       )
     with pytest.raises(ValueError):
-      dasda.SyntheticDataConfig(
+      das.SyntheticDataConfig(
         drop_fraction=0.5,
-        gbm_params=dasda.GBMParams(S0=100, mu=0, sigma=0.2, dt=60 / (365 * 24 * 60)),
+        gbm_params=das.GBMParams(S0=100, mu=0, sigma=0.2, dt=60 / (365 * 24 * 60)),
       )
 
     inst_PGHH = sid.EquityDesc(sid.Market.INDIAN_MARKET, "PGHH")
@@ -304,23 +304,23 @@ class TestGetSyntheticData:
     inst_and_cfg = [
       (
         inst_PGHH,
-        dasda.SyntheticDataConfig(
+        das.SyntheticDataConfig(
           drop_fraction=0.8,
-          gbm_params=dasda.GBMParams(S0=123, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60)),
+          gbm_params=das.GBMParams(S0=123, mu=5, sigma=0.2, dt=1 / (365 * 24 * 60)),
         ),
       ),
       (
         inst_COLPAL,
-        dasda.SyntheticDataConfig(
+        das.SyntheticDataConfig(
           drop_fraction=None,
-          gbm_params=dasda.GBMParams(S0=244, mu=-5, sigma=0.7, dt=1 / (365 * 24 * 60)),
+          gbm_params=das.GBMParams(S0=244, mu=-5, sigma=0.7, dt=1 / (365 * 24 * 60)),
         ),
       ),
     ]
     start_date = dt.date(2023, 1, 2)  # Monday
     end_date = dt.date(2023, 1, 3)  # Tuesday
     date_range = sdr.DateRange(start_date, end_date)
-    data = dasda.get_synthetic_data(inst_and_cfg, date_range)
+    data = das.get_synthetic_data(inst_and_cfg, date_range)
 
     df_COLPAL = data.for_instrument_desc(inst_COLPAL)
     assert df_COLPAL.index.is_unique
