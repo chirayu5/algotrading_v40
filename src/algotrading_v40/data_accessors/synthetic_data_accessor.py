@@ -1,10 +1,14 @@
 import dataclasses
 import datetime as dt
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
 import pytz
 
+import algotrading_v40.structures.data as sd
+import algotrading_v40.structures.date_range as sdr
+import algotrading_v40.structures.instrument_desc as sid
 import algotrading_v40.utils.df as udf
 
 
@@ -128,47 +132,39 @@ class SyntheticDataConfig:
       )
 
 
-# class SyntheticDataAccessor:
-#   def __init__(self, symbols: list[str] | dict[str, SyntheticDataConfig]):
-#     if isinstance(symbols, list):
-#       default_gbm_params = GBMParams(
-#         S0=np.random.uniform(10, 1000),
-#         mu=np.random.uniform(-6, 6),
-#         sigma=np.random.uniform(0.1, 0.6),
-#         dt=1
-#         / (
-#           365 * 24 * 60
-#         ),  # create_trading_datetime_index always returns 1 minute intervals
-#       )
-#       self.symbols = {
-#         symbol: SyntheticDataConfig(
-#           drop_fraction=None,  # no drop by default
-#           gbm_params=default_gbm_params,
-#         )
-#         for symbol in symbols
-#       }
-#     else:
-#       self.symbols = symbols
+def get_synthetic_data(
+  instrument_descs: Sequence[sid.InstrumentDesc]
+  | Sequence[tuple[sid.InstrumentDesc, SyntheticDataConfig]],
+  date_range: sdr.DateRange,
+) -> sd.Data:
+  instrument_desc_to_config: dict[sid.InstrumentDesc, SyntheticDataConfig] = {}
 
-#   def get(self, start_date: dt.date, end_date: dt.date) -> sd.Data:
-#     symbol_to_df = {}
-#     for symbol, config in self.symbols.items():
-#       symbol_to_df[symbol] = self._get_ohlc(start_date, end_date, config)
-#     return sd.Data.create_from_symbol_to_df(symbol_to_df)
+  for item in instrument_descs:
+    if isinstance(item, tuple) and len(item) == 2:
+      inst, cfg = item
+      instrument_desc_to_config[inst] = cfg
+      continue
 
-#   def _get_ohlc(
-#     self,
-#     start_date: dt.date,
-#     end_date: dt.date,
-#     config: SyntheticDataConfig,
-#   ) -> pd.DataFrame:
-#     index = create_trading_datetime_index(start_date, end_date)
-#     df_ohlc = simulate_gbm_ohlc(
-#       gbm_params=config.gbm_params,
-#       N=len(index),
-#     )
-#     df_ohlc.index = index
-#     if config.drop_fraction is not None:
-#       df_ohlc = df_ohlc.sample(frac=1 - config.drop_fraction)
-#       df_ohlc.sort_index(inplace=True)  # sample() shuffles the index
-#     return df_ohlc
+    default_gbm_params = GBMParams(
+      S0=np.random.uniform(10, 1000),
+      mu=np.random.uniform(-6, 6),
+      sigma=np.random.uniform(0.1, 0.6),
+      dt=1 / (365 * 24 * 60),  # 1-minute steps
+    )
+    instrument_desc_to_config[item] = SyntheticDataConfig(
+      drop_fraction=None, gbm_params=default_gbm_params
+    )
+
+  instrument_desc_to_df: dict[sid.InstrumentDesc, pd.DataFrame] = {}
+  for inst, cfg in instrument_desc_to_config.items():
+    index = create_trading_datetime_index(date_range.start_date, date_range.end_date)
+
+    df_ohlc = simulate_gbm_ohlc(cfg.gbm_params, N=len(index))
+    df_ohlc.index = index
+
+    if cfg.drop_fraction is not None:
+      df_ohlc = df_ohlc.sample(frac=1 - cfg.drop_fraction)
+      df_ohlc.sort_index(inplace=True)  # sampling shuffles the index
+    instrument_desc_to_df[inst] = df_ohlc
+
+  return sd.Data.create_from_instrument_desc_to_df(instrument_desc_to_df)
