@@ -294,3 +294,83 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     pd.testing.assert_frame_equal(result, expected)
+
+  def test_mixed_with_inc_0(self):
+    index = self._create_datetime_index(5)
+    s = pd.Series(
+      [1.00, 0.94, 1.04, 1.10, 0.90],
+      index=index,
+    )
+    inc = pd.Series([1, 1, 0, 1, 1], index=index, dtype="Int64")
+    tpb = pd.Series([0.05] * 5, index=index)
+    slb = pd.Series([-0.03] * 5, index=index)
+    vb = pd.Series([np.nan] * 5, index=index)
+    side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
+
+    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    #                                   tpha  slha  vbha  first_touch_at  first_touch_type
+    # date
+    # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1
+    # 2023-01-02 03:46:59.999000+00:00  <NA>     2     4               2                -1
+    # 2023-01-02 03:47:59.999000+00:00  <NA>  <NA>  <NA>            <NA>              <NA>
+    # 2023-01-02 03:48:59.999000+00:00  <NA>     4     4               4                -1
+    # 2023-01-02 03:49:59.999000+00:00  <NA>  <NA>  <NA>            <NA>              <NA>
+    expected = pd.DataFrame(
+      {
+        "tpha": [1, np.nan, np.nan, np.nan, np.nan],
+        "slha": [2, 2, np.nan, 4, np.nan],
+        "vbha": [4, 4, np.nan, 4, np.nan],
+        "first_touch_at": [1, 2, np.nan, 4, np.nan],
+        "first_touch_type": [1, -1, np.nan, -1, np.nan],
+      },
+      index=index,
+    ).astype(
+      {
+        "tpha": "Int32",
+        "slha": "Int32",
+        "vbha": "Int32",
+        "first_touch_at": "Int32",
+        "first_touch_type": "Int32",
+      }
+    )
+    pd.testing.assert_frame_equal(result, expected)
+
+  def test_mixed_with_vb_same_as_index(self):
+    index = self._create_datetime_index(5)
+    s = pd.Series(
+      [1.00, 0.94, 1.04, 1.10, 0.90],
+      index=index,
+    )
+    inc = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
+    tpb = pd.Series([0.05] * 5, index=index)
+    slb = pd.Series([-0.03] * 5, index=index)
+    vb = pd.Series([np.nan, np.nan, 2, np.nan, np.nan], index=index)
+    side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
+
+    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    #                                   tpha  slha  vbha  first_touch_at  first_touch_type
+    # date
+    # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1
+    # 2023-01-02 03:46:59.999000+00:00  <NA>     2     4               2                -1
+    # 2023-01-02 03:47:59.999000+00:00  <NA>  <NA>  <NA>            <NA>              <NA>
+    # 2023-01-02 03:48:59.999000+00:00  <NA>     4     4               4                -1
+    # 2023-01-02 03:49:59.999000+00:00  <NA>  <NA>  <NA>            <NA>              <NA>
+    expected = pd.DataFrame(
+      {
+        "tpha": [1, np.nan, np.nan, np.nan, np.nan],
+        "slha": [2, 2, np.nan, 4, np.nan],
+        "vbha": [4, 4, np.nan, 4, np.nan],
+        "first_touch_at": [1, 2, np.nan, 4, np.nan],
+        "first_touch_type": [1, -1, np.nan, -1, np.nan],
+      },
+      index=index,
+    ).astype(
+      {
+        "tpha": "Int32",
+        "slha": "Int32",
+        "vbha": "Int32",
+        "first_touch_at": "Int32",
+        "first_touch_type": "Int32",
+      }
+    )
+    pd.testing.assert_frame_equal(result, expected)
