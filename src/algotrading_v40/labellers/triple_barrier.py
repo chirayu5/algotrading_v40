@@ -42,8 +42,11 @@ def _validate_inputs(
     raise ValueError(
       "All vertical barriers must be greater than or equal to their index"
     )
-  if not np.all(vb.values <= n - 1):
-    raise ValueError("All vertical barriers must be less than or equal to n-1")
+
+  if not np.all(tpb > 0):
+    raise ValueError("All take profit barriers must be greater than 0")
+  if not np.all(slb < 0):
+    raise ValueError("All stop loss barriers must be less than 0")
 
 
 def run_triple_barrier(
@@ -89,7 +92,10 @@ def run_triple_barrier(
 
     tpha[i] = tp_idx
     slha[i] = sl_idx
-    vbha[i] = vb[i]
+    if vb[i] < n:
+      vbha[i] = vb[i]
+    else:
+      vbha[i] = np.nan
 
   first_touch_at = np.nanmin([tpha, slha, vbha], axis=0)
   first_touch_type = np.empty(n, dtype=object)
@@ -118,10 +124,6 @@ def validate_and_run_triple_barrier(
   vb: pd.Series,  # absolute integer index of vertical barriers
   side: pd.Series,  # 1 for long bet, -1 for short bet
 ) -> pd.DataFrame:
-  vb = vb.copy()
-  n = len(s)
-  vb.fillna(n - 1, inplace=True)
-  vb = vb.astype(int)
   _validate_inputs(s, inc, tpb, slb, vb, side)
 
   tpha, slha, vbha, first_touch_at, first_touch_type = run_triple_barrier(
