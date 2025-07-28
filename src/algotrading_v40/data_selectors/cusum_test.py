@@ -65,6 +65,7 @@ class TestValidateAndRunCusum:
           break
         if s.iloc[j] - s.iloc[i] > h:
           expected[j] = 1
+          break
         if expected[i] == 1:
           break
 
@@ -74,6 +75,7 @@ class TestValidateAndRunCusum:
           break
         if s.iloc[j] - s.iloc[i] < -h:
           expected[j] = -1
+          break
         if expected[i] == -1:
           break
 
