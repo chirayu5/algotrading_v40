@@ -61,7 +61,9 @@ def run_triple_barrier(
   # take profit hit at
   # stop loss hit at
   # vertical barrier hit at
-  tpha, slha, vbha = (
+  tpha, slha, vbha, first_touch_type, first_touch_return = (
+    np.empty(n, dtype=object),
+    np.empty(n, dtype=object),
     np.empty(n, dtype=object),
     np.empty(n, dtype=object),
     np.empty(n, dtype=object),
@@ -89,7 +91,7 @@ def run_triple_barrier(
       if ret[j] <= slb[i]:
         sl_idx = i + j
         break
-
+    del ret
     tpha[i] = tp_idx
     slha[i] = sl_idx
     if vb[i] < n:
@@ -98,7 +100,6 @@ def run_triple_barrier(
       vbha[i] = np.nan
 
   first_touch_at = np.nanmin([tpha, slha, vbha], axis=0)
-  first_touch_type = np.empty(n, dtype=object)
   # 1: take profit barrier hit
   # -1: stop loss barrier hit
   # 0: vertical barrier hit
@@ -106,14 +107,18 @@ def run_triple_barrier(
   for i in range(n):
     if np.isnan(first_touch_at[i]):
       first_touch_type[i] = np.nan
+      first_touch_return[i] = np.nan
     elif tpha[i] == first_touch_at[i]:
       first_touch_type[i] = 1
+      first_touch_return[i] = s[tpha[i]] / s[i] - 1
     elif slha[i] == first_touch_at[i]:
       first_touch_type[i] = -1
+      first_touch_return[i] = s[slha[i]] / s[i] - 1
     elif vbha[i] == first_touch_at[i]:
       first_touch_type[i] = 0
+      first_touch_return[i] = s[vbha[i]] / s[i] - 1
 
-  return tpha, slha, vbha, first_touch_at, first_touch_type
+  return tpha, slha, vbha, first_touch_at, first_touch_type, first_touch_return
 
 
 def validate_and_run_triple_barrier(
@@ -126,13 +131,15 @@ def validate_and_run_triple_barrier(
 ) -> pd.DataFrame:
   _validate_inputs(s, inc, tpb, slb, vb, side)
 
-  tpha, slha, vbha, first_touch_at, first_touch_type = run_triple_barrier(
-    s=s.values,
-    inc=inc.values,
-    tpb=tpb.values,
-    slb=slb.values,
-    vb=vb.values,
-    side=side.values,
+  tpha, slha, vbha, first_touch_at, first_touch_type, first_touch_return = (
+    run_triple_barrier(
+      s=s.values,
+      inc=inc.values,
+      tpb=tpb.values,
+      slb=slb.values,
+      vb=vb.values,
+      side=side.values,
+    )
   )
 
   result = pd.DataFrame(
@@ -142,6 +149,7 @@ def validate_and_run_triple_barrier(
       "vbha": vbha,
       "first_touch_at": first_touch_at,
       "first_touch_type": first_touch_type,
+      "first_touch_return": first_touch_return,
     },
     index=s.index,
   ).astype(
@@ -151,6 +159,7 @@ def validate_and_run_triple_barrier(
       "vbha": "Int32",
       "first_touch_at": "Int32",
       "first_touch_type": "Int32",
+      "first_touch_return": "float32",
     }
   )
   return result

@@ -4,6 +4,10 @@ import pandas as pd
 import algotrading_v40.labellers.triple_barrier as ltb
 
 
+def calc_ret(v0: float, v1: float) -> float:
+  return v1 / v0 - 1
+
+
 class TestValidateAndRunTripleBarrier:
   def _create_datetime_index(self, n_periods: int) -> pd.DatetimeIndex:
     """Create a DatetimeIndex in the format specified by the user."""
@@ -53,6 +57,14 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
+    print(result.to_string())
+    print(expected.to_string())
     pd.testing.assert_frame_equal(result, expected)
 
   def test_long_stop_loss_barrier(self):
@@ -93,6 +105,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_short_take_profit_barrier(self):
@@ -133,6 +151,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_short_stop_loss_barrier(self):
@@ -173,6 +197,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_long_vertical_barrier(self):
@@ -213,6 +243,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_short_vertical_barrier(self):
@@ -253,6 +289,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_mixed(self):
@@ -293,6 +335,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_mixed_with_inc_0(self):
@@ -333,6 +381,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_mixed_with_vb_same_as_index(self):
@@ -373,6 +427,12 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
 
   def test_variable_barriers(self):
@@ -413,4 +473,10 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
+    expected["first_touch_return"] = expected.apply(
+      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      if pd.notna(row["first_touch_at"])
+      else np.nan,
+      axis=1,
+    ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
