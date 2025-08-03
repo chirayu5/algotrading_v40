@@ -26,7 +26,7 @@ def _validate_inputs(
     (vb, "vb"),
     (side, "side"),
   ]:
-    if udf.analyze_numeric_series_quality(series).n_bad_values != 0:
+    if udf.analyse_numeric_series_quality(series).n_bad_values != 0:
       raise ValueError(f"{name} must not have bad values")
 
   for series, name in [(inc, "inc"), (vb, "vb"), (side, "side")]:

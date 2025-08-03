@@ -142,33 +142,41 @@ class TestGetDfSliceInDateRange:
     pd.testing.assert_frame_equal(dfb, df)
 
 
-class TestAnalyzeNumericSeriesQuality:
+class TestAnalyseNumericSeriesQuality:
   def test_normal_series_no_issues(self):
     s = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 5
+    assert result.good_values_mask.equals(pd.Series([True, True, True, True, True]))
+    assert result.n_values == 5
 
   def test_series_with_zeros_different_representations(self):
     s = pd.Series([1.0, 0.0, 0, -0.0, -0, 2.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 4  # 0.0, 0, -0.0, -0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 6
+    assert result.good_values_mask.equals(
+      pd.Series([True, True, True, True, True, True])
+    )
+    assert result.n_values == 6
 
   def test_series_with_negatives(self):
     s = pd.Series([1.0, -2.0, 3.0, -4.5, -0, -0.0, -np.inf, -np.nan, 5.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 2
@@ -177,155 +185,208 @@ class TestAnalyzeNumericSeriesQuality:
     )  # -0, -0.0, -np.inf and -np.nan are not counted as negatives
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 7
+    assert result.good_values_mask.equals(
+      pd.Series([True, True, True, True, True, True, False, False, True])
+    )
+    assert result.n_values == 9
 
   def test_series_with_nan_values(self):
     s = pd.Series([1.0, np.nan, 3.0, np.nan, 5.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([True, False, True, False, True]))
+    assert result.n_values == 5
 
   def test_series_with_inf_values(self):
     s = pd.Series([1.0, np.inf, 3.0, -np.inf, 5.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([True, False, True, False, True]))
+    assert result.n_values == 5
 
   def test_series_with_mixed_bad_values(self):
     s = pd.Series([1.0, np.nan, 3.0, np.inf, -np.inf, 5.0, None])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 4  # nan, inf, -inf, None
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 1
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(
+      pd.Series([True, False, True, False, False, True, False])
+    )
+    assert result.n_values == 7
+    assert s.loc[result.good_values_mask].equals(
+      pd.Series([1.0, 3.0, 5.0], index=[0, 2, 5])
+    )
 
   def test_series_with_bad_values_at_start(self):
     s = pd.Series([np.nan, np.inf, 1.0, 2.0, 3.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 2
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([False, False, True, True, True]))
+    assert result.n_values == 5
 
   def test_series_with_bad_values_at_end(self):
     s = pd.Series([1.0, 2.0, 3.0, np.nan, np.inf])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 2
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([True, True, True, False, False]))
+    assert result.n_values == 5
 
   def test_series_with_bad_values_at_both_ends(self):
     s = pd.Series([np.nan, np.inf, 1.0, 2.0, 3.0, -np.inf, np.nan])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 4
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 2
     assert result.n_bad_values_at_end == 2
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(
+      pd.Series([False, False, True, True, True, False, False])
+    )
+    assert result.n_values == 7
 
   def test_series_with_bad_values_in_middle(self):
     s = pd.Series([1.0, 2.0, np.nan, np.inf, 3.0, 4.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 2
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 4
+    assert result.good_values_mask.equals(
+      pd.Series([True, True, False, False, True, True])
+    )
+    assert result.n_values == 6
 
   def test_all_bad_values(self):
     s = pd.Series([np.nan, np.inf, -np.inf, np.nan])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 4
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 4
     assert result.n_bad_values_at_end == 4
+    assert result.n_good_values == 0
+    assert result.good_values_mask.equals(pd.Series([False, False, False, False]))
+    assert result.n_values == 4
 
   def test_empty_series(self):
     s = pd.Series([], dtype=float)
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 0
+    assert result.good_values_mask.equals(pd.Series([], dtype=bool))
+    assert result.n_values == 0
 
   def test_single_good_value(self):
     s = pd.Series([42.5])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 1
+    assert result.good_values_mask.equals(pd.Series([True]))
+    assert result.n_values == 1
 
   def test_single_bad_value(self):
     s = pd.Series([np.nan])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 1
     assert result.n_zeros == 0
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 1
     assert result.n_bad_values_at_end == 1
+    assert result.n_good_values == 0
+    assert result.good_values_mask.equals(pd.Series([False]))
+    assert result.n_values == 1
 
   def test_single_zero_value(self):
     s = pd.Series([0.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 1
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 1
+    assert result.good_values_mask.equals(pd.Series([True]))
+    assert result.n_values == 1
 
   def test_single_negative_value(self):
     s = pd.Series([-5.0])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 0
     assert result.n_negatives == 1
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 1
+    assert result.good_values_mask.equals(pd.Series([True]))
+    assert result.n_values == 1
 
   def test_complex_mixed_case_with_result_dtypes(self):
     # Test with bad values at start/end, zeros, negatives, and good values
     s = pd.Series([np.nan, -np.inf, -2.0, 0.0, 1.0, -3.5, np.inf, np.nan])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 4  # 2 nan, 2 inf
     assert result.n_zeros == 1
@@ -334,75 +395,90 @@ class TestAnalyzeNumericSeriesQuality:
     )  # -2.0, -3.5 (-inf values don't count as they're bad)
     assert result.n_bad_values_at_start == 2
     assert result.n_bad_values_at_end == 2
+    assert result.n_good_values == 4
+    assert result.good_values_mask.equals(
+      pd.Series([False, False, True, True, True, True, False, False])
+    )
+    assert result.n_values == 8
+    assert s.loc[result.good_values_mask].equals(
+      pd.Series([-2.0, 0.0, 1.0, -3.5], index=[2, 3, 4, 5])
+    )
 
     assert isinstance(result.n_bad_values, int)
     assert isinstance(result.n_zeros, int)
     assert isinstance(result.n_negatives, int)
     assert isinstance(result.n_bad_values_at_start, int)
     assert isinstance(result.n_bad_values_at_end, int)
-    for field_name in result.__dataclass_fields__:
-      assert isinstance(getattr(result, field_name), int)
 
   def test_integer_series(self):
     s = pd.Series([1, 2, -3, 0, 5], dtype=int)
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 1
     assert result.n_negatives == 1
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 5
+    assert result.good_values_mask.equals(pd.Series([True, True, True, True, True]))
+    assert result.n_values == 5
 
   def test_float32_series(self):
     s = pd.Series([1.0, -2.0, 0.0, np.nan], dtype=np.float32)
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 1
     assert result.n_zeros == 1
     assert result.n_negatives == 1
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 1
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([True, True, True, False]))
+    assert result.n_values == 4
 
   def test_non_numeric_series_raises_error(self):
     s = pd.Series(["a", "b", "c"])
     sb = s.copy()
     with pytest.raises(ValueError, match="Series must be numeric"):
-      udf.analyze_numeric_series_quality(s)
+      udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
 
   def test_object_series_with_numbers_raises_error(self):
     s = pd.Series([1, 2, "3"], dtype=object)
     sb = s.copy()
     with pytest.raises(ValueError, match="Series must be numeric"):
-      udf.analyze_numeric_series_quality(s)
+      udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
 
   def test_datetime_series_raises_error(self):
     s = pd.Series(pd.date_range("2020-01-01", periods=3))
     sb = s.copy()
     with pytest.raises(ValueError, match="Series must be numeric"):
-      udf.analyze_numeric_series_quality(s)
+      udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
 
   def test_string_series_raises_error(self):
     s = pd.Series(["1.0", "2.0", "3.0"])
     sb = s.copy()
     with pytest.raises(ValueError, match="Series must be numeric"):
-      udf.analyze_numeric_series_quality(s)
+      udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
 
   def test_boolean_series_works(self):
     s = pd.Series([True, False, True])
     sb = s.copy()
-    result = udf.analyze_numeric_series_quality(s)
+    result = udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
     assert result.n_bad_values == 0
     assert result.n_zeros == 1  # False
     assert result.n_negatives == 0
     assert result.n_bad_values_at_start == 0
     assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 3
+    assert result.good_values_mask.equals(pd.Series([True, True, True]))
+    assert result.n_values == 3
 
   def test_pd_null_na_None_series_is_not_numeric(self):
     with pytest.raises(
@@ -414,10 +490,29 @@ class TestAnalyzeNumericSeriesQuality:
 
     s = pd.Series([1.0, 2.0, 3.0, pd.NA])
     sb = s.copy()
-    # If we try to analyze a series with pd.NA, it raises a ValueError
+    # If we try to analyse a series with pd.NA, it raises a ValueError
     with pytest.raises(ValueError, match="Series must be numeric"):
-      udf.analyze_numeric_series_quality(s)
+      udf.analyse_numeric_series_quality(s)
     pd.testing.assert_series_equal(s, sb)
+
+  def test_series_with_datetime_index(self):
+    s = pd.Series([1.0, -np.inf, 3.0], index=pd.date_range("2020-01-01", periods=3))
+    sb = s.copy()
+    result = udf.analyse_numeric_series_quality(s)
+    pd.testing.assert_series_equal(s, sb)
+    assert result.n_bad_values == 1
+    assert result.n_zeros == 0
+    assert result.n_negatives == 0
+    assert result.n_bad_values_at_start == 0
+    assert result.n_bad_values_at_end == 0
+    assert result.n_good_values == 2
+    assert result.good_values_mask.equals(pd.Series([True, False, True], index=s.index))
+    assert result.n_values == 3
+    assert s.loc[result.good_values_mask].equals(
+      pd.Series(
+        [1.0, 3.0], index=[pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-03")]
+      )
+    )
 
 
 class TestAnalyseNumericColumnsQuality:

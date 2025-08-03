@@ -235,7 +235,7 @@ class TestGetSyntheticData:
     assert isinstance(data, sd.Data)
     assert {d.symbol for d in data.available_instrument_descs()} == set(symbols)
     for inst in instrument_descs:
-      df = data.for_instrument_desc(inst)
+      df = data.get_full_df_for_instrument_desc(inst)
       assert df.index.is_unique
       assert df.index.is_monotonic_increasing
       assert df.index.name == "bar_close_timestamp"
@@ -323,7 +323,7 @@ class TestGetSyntheticData:
     date_range = sdr.DateRange(start_date, end_date)
     data = das.get_synthetic_data(inst_and_cfg, date_range)
 
-    df_COLPAL = data.for_instrument_desc(inst_COLPAL)
+    df_COLPAL = data.get_full_df_for_instrument_desc(inst_COLPAL)
     assert df_COLPAL.index.name == "bar_close_timestamp"
     assert df_COLPAL.index.is_unique
     assert df_COLPAL.index.is_monotonic_increasing
@@ -332,7 +332,7 @@ class TestGetSyntheticData:
     )
     assert df_COLPAL["open"].iloc[0] == 244
 
-    df_PGHH = data.for_instrument_desc(inst_PGHH)
+    df_PGHH = data.get_full_df_for_instrument_desc(inst_PGHH)
     assert df_PGHH.index.is_unique
     assert df_PGHH.index.is_monotonic_increasing
     assert len(df_PGHH) == 150, (

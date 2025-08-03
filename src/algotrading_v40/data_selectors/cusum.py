@@ -7,7 +7,7 @@ def validate_and_run_cusum(
   s: pd.Series,  # series to select events on
   h: float,  # cusum threshold
 ) -> pd.Series:
-  if udf.analyze_numeric_series_quality(s).n_bad_values > 0:
+  if udf.analyse_numeric_series_quality(s).n_bad_values > 0:
     raise ValueError("s must not have bad values")
 
   if h <= 0:

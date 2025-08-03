@@ -20,50 +20,58 @@ def get_df_slice_in_date_range(
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzeSeriesQualityResult:
-  n_bad_values: int
+class AnalyseSeriesQualityResult:
   n_zeros: int
   n_negatives: int
   n_bad_values_at_start: int
   n_bad_values_at_end: int
+  good_values_mask: pd.Series
+  n_values: int
+
+  @property
+  def n_bad_values(self) -> int:
+    return self.n_values - self.n_good_values
+
+  @property
+  def n_good_values(self) -> int:
+    return int(self.good_values_mask.sum())
 
 
-def analyze_numeric_series_quality(s: pd.Series) -> AnalyzeSeriesQualityResult:
+def analyse_numeric_series_quality(s: pd.Series) -> AnalyseSeriesQualityResult:
   if not pd.api.types.is_numeric_dtype(s):
     raise ValueError("Series must be numeric")
 
-  bad_mask = ~np.isfinite(s.to_numpy())
-  good_mask = ~bad_mask
+  bad_values_mask = ~np.isfinite(s.to_numpy())
+  good_values_mask = ~bad_values_mask
 
-  n_bad_values = bad_mask.sum()
-
-  good_values = s[good_mask]
+  good_values = s[good_values_mask]
   n_zeros = (good_values == 0).sum()
   n_negatives = (good_values < 0).sum()
 
-  cumsum_good = (~bad_mask).cumsum()
+  cumsum_good = (~bad_values_mask).cumsum()
   n_bad_values_at_start = (cumsum_good == 0).sum()
 
-  cumsum_good_reversed = (~bad_mask[::-1]).cumsum()
+  cumsum_good_reversed = (~bad_values_mask[::-1]).cumsum()
   n_bad_values_at_end = (cumsum_good_reversed == 0).sum()
 
-  return AnalyzeSeriesQualityResult(
-    n_bad_values=int(n_bad_values),
+  return AnalyseSeriesQualityResult(
     n_zeros=int(n_zeros),
     n_negatives=int(n_negatives),
     n_bad_values_at_start=int(n_bad_values_at_start),
     n_bad_values_at_end=int(n_bad_values_at_end),
+    good_values_mask=pd.Series(good_values_mask, index=s.index),
+    n_values=len(s),
   )
 
 
 def analyse_numeric_columns_quality(
   df: pd.DataFrame,
-) -> dict[str, AnalyzeSeriesQualityResult]:
+) -> dict[str, AnalyseSeriesQualityResult]:
   result = {}
   for col in df.columns:
     if not pd.api.types.is_numeric_dtype(df[col]):
       continue
-    result[col] = analyze_numeric_series_quality(df[col])  # type: ignore
+    result[col] = analyse_numeric_series_quality(df[col])  # type: ignore
   return result
 
 
