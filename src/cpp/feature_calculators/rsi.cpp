@@ -22,7 +22,7 @@ rsi_cpp(const py::array_t<double, py::array::c_style | py::array::forcecast>
   double upsum, dnsum, diff;
   std::size_t icase;
 
-  // Edge-case: series shorter than lookback → all NaN
+  // Edge-case: series shorter than lookback => all NaN
   if (n <= static_cast<std::size_t>(lookback)) {
     for (icase = 0; icase < n; ++icase) {
       output[icase] = std::numeric_limits<double>::quiet_NaN();
