@@ -5,35 +5,37 @@ import pandas as pd
 import pytest
 
 import algotrading_v40.utils.streaming as us
+import algotrading_v40.utils.testing as ut
 from algotrading_v40.utils.features import get_indian_market_session_info
+
+TEST_INDEX = pd.DatetimeIndex(
+  [
+    # Session 1 (2023-01-02)
+    pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),  # first bar
+    pd.Timestamp("2023-01-02 03:46:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-02 03:47:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-02 03:48:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-02 09:52:59.999000", tz="UTC"),  # last bar
+    # Session 2 (2023-01-04)
+    # first bar due to overnight gap and not time-based
+    # can happen if first bar is missing
+    pd.Timestamp("2023-01-04 03:50:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-04 03:51:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-04 03:52:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-04 03:53:59.999000", tz="UTC"),
+    pd.Timestamp("2023-01-04 09:59:59.999000", tz="UTC"),  # last bar
+    # Session 3 (2023-01-10)
+    # incomplete session
+    pd.Timestamp("2023-01-10 03:45:59.999000", tz="UTC"),  # first bar
+    pd.Timestamp("2023-01-10 03:46:59.999000", tz="UTC"),
+  ]
+)
 
 
 class TestGetIndianMarketSessionInfo:
   def test_two_sessions_basic_properties(self) -> None:
-    idx = pd.DatetimeIndex(
-      [
-        # Session 1 (2023-01-02)
-        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),  # first bar
-        pd.Timestamp("2023-01-02 03:46:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 03:47:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 03:48:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 09:52:59.999000", tz="UTC"),  # last bar
-        # Session 2 (2023-01-04)
-        # first bar due to overnight gap and not time-based
-        # can happen if first bar is missing
-        pd.Timestamp("2023-01-04 03:50:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:51:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:52:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:53:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 09:59:59.999000", tz="UTC"),  # last bar
-        # Session 3 (2023-01-10)
-        # incomplete session
-        pd.Timestamp("2023-01-10 03:45:59.999000", tz="UTC"),  # first bar
-        pd.Timestamp("2023-01-10 03:46:59.999000", tz="UTC"),
-      ]
-    )
-
-    df = get_indian_market_session_info(idx)
+    with ut.expect_no_mutation(TEST_INDEX):
+      df = get_indian_market_session_info(TEST_INDEX)
 
     expected_df = pd.DataFrame(
       {
@@ -86,34 +88,12 @@ class TestGetIndianMarketSessionInfo:
         "bar_number_in_session": [0, 1, 2, 3, 367, 5, 6, 7, 8, 374, 0, 1],
         "weekday": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 1, 1],
       },
-      index=idx,
+      index=TEST_INDEX,
     ).astype({"weekday": "int32"})
     pd.testing.assert_frame_equal(df, expected_df)
 
   def test_streamability(self) -> None:
-    idx = pd.DatetimeIndex(
-      [
-        # Session 1 (2023-01-02)
-        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),  # first bar
-        pd.Timestamp("2023-01-02 03:46:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 03:47:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 03:48:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-02 09:52:59.999000", tz="UTC"),  # last bar
-        # Session 2 (2023-01-04)
-        # first bar due to overnight gap and not time-based
-        # can happen if first bar is missing
-        pd.Timestamp("2023-01-04 03:50:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:51:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:52:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 03:53:59.999000", tz="UTC"),
-        pd.Timestamp("2023-01-04 09:59:59.999000", tz="UTC"),  # last bar
-        # Session 3 (2023-01-10)
-        # incomplete session
-        pd.Timestamp("2023-01-10 03:45:59.999000", tz="UTC"),  # first bar
-        pd.Timestamp("2023-01-10 03:46:59.999000", tz="UTC"),
-      ]
-    )
-    df = pd.DataFrame(index=idx)
+    df = pd.DataFrame(index=TEST_INDEX)
     df["open"] = np.random.uniform(100, 200, len(df))
     df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
     df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
