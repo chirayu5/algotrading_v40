@@ -109,4 +109,8 @@ class TestOpenGap:
     result_quality = udf.analyse_numeric_series_quality(result.df_batch["open_gap_0"])
     # First 7 values should be good and match with streaming
     assert result_quality.n_good_values >= 7
+    # there should be no bad values at the end
+    assert result_quality.n_bad_values_at_end == 0
+    # all bad values should be at the start
+    assert result_quality.n_bad_values_at_start == result_quality.n_bad_values
     assert result.dfs_match
