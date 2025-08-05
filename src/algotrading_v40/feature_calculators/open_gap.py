@@ -22,12 +22,13 @@ def open_gap_indian_market(
   )
   df_session.sort_values(by="session_id")
 
-  df_session[f"open_gap_{lag}"] = (
+  df_session["open_gap"] = (
     df_session["session_open_price"] - df_session["session_close_price"].shift(1)
   ) / df_session["session_close_price"].shift(1)
 
   result = df[["session_id"]].copy()  # to avoid SettingWithCopyWarning
   result["session_id"] = result["session_id"] - lag
   result = result.merge(df_session, on="session_id", how="left")
+  result.rename(columns={"open_gap": f"open_gap_{lag}"}, inplace=True)
   result.index = df.index
   return result[[f"open_gap_{lag}"]]

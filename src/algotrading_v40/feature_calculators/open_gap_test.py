@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 import algotrading_v40.feature_calculators.open_gap as fc_open_gap
+import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
 import algotrading_v40.utils.testing as ut
 
@@ -105,4 +106,7 @@ class TestOpenGap:
     result = us.compare_batch_and_stream(
       df, lambda df_: fc_open_gap.open_gap_indian_market(df_, lag=0)
     )
+    result_quality = udf.analyse_numeric_series_quality(result.df_batch["open_gap_0"])
+    # First 7 values should be good and match with streaming
+    assert result_quality.n_good_values >= 7
     assert result.dfs_match
