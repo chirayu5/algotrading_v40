@@ -13,5 +13,23 @@ file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS
 # build ONE shared object called algotrading_v40_cpp$(ext)
 pybind11_add_module(algotrading_v40_cpp ${CPP_SOURCES})
 
+# Silence '/*' within block comment warnings for GCC/Clang (incl. AppleClang)
+# i.e. these
+# DEBUG [ 66%] Building CXX object CMakeFiles/algotrading_v40_cpp.dir/src/cpp/feature_calculators/stochastic.cpp.o
+# DEBUG /Users/chirayuagrawal/algotrading_v40/src/cpp/feature_calculators/stochastic.cpp:82:2: warning: '/*' within block comment [-Wcomment]
+# DEBUG    82 | //*************************************************************
+# DEBUG       |  ^
+# DEBUG /Users/chirayuagrawal/algotrading_v40/src/cpp/feature_calculators/stochastic.cpp:84:2: warning: '/*' within block comment [-Wcomment]
+# DEBUG    84 | //*************************************************************
+# DEBUG       |  ^
+# DEBUG /Users/chirayuagrawal/algotrading_v40/src/cpp/feature_calculators/stochastic.cpp:136:2: warning: '/*' within block comment [-Wcomment]
+# DEBUG   136 | //*************************************************************
+# DEBUG       |  ^
+# DEBUG 3 warnings generated.
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(algotrading_v40_cpp PRIVATE -Wno-comment)
+endif()
+
 # Install the module
 install(TARGETS algotrading_v40_cpp DESTINATION .)
