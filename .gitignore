@@ -34,3 +34,6 @@ data/**
 
 # zerodha_kite.pkl
 src/algotrading_v40/connectors/zerodha_kite.pkl
+
+# Ignore temp.cpp in non_prod_tm_code directory
+non_prod_tm_code/temp.cpp
