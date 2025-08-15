@@ -18,7 +18,7 @@ class TestRsiStreamingVsBatch:
     values obtained when the same data arrive one point at a time.
     """
     np.random.seed(42)
-    lookback = 14
+    lookback = 20
     id = sid.InstrumentDesc(
       market=sid.Market.INDIAN_MARKET,
       symbol="ABCD",
@@ -26,7 +26,7 @@ class TestRsiStreamingVsBatch:
     data = das.get_synthetic_data(
       instrument_descs=[id],
       date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 1),
+        start_date=dt.date(2023, 1, 2),
         end_date=dt.date(2023, 1, 3),
       ),
     )
@@ -40,10 +40,12 @@ class TestRsiStreamingVsBatch:
     )
     # input data should not be modified
     pd.testing.assert_frame_equal(df, dfb)
-    assert result.df_batch.columns == ["rsi_14"]
+    assert result.df_batch.columns == [f"rsi_{lookback}"]
     # result should have the same index as the input data
     assert result.df_batch.index.equals(df.index)
-    result_quality = udf.analyse_numeric_series_quality(result.df_batch["rsi_14"])
+    result_quality = udf.analyse_numeric_series_quality(
+      result.df_batch[f"rsi_{lookback}"]
+    )
     # at least 1 full session's data should be good and compared with streaming
     assert result_quality.n_good_values >= 375
     # there should be no bad values at the end

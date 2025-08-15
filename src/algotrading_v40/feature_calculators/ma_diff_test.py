@@ -26,7 +26,7 @@ class TestMaDiffStreamingVsBatch:
       instrument_descs=[inst],
       date_range=sdr.DateRange(
         start_date=dt.date(2023, 1, 2),
-        end_date=dt.date(2023, 1, 5),
+        end_date=dt.date(2023, 1, 3),
       ),
     )
     df = data.get_full_df_for_instrument_desc(inst).copy()
@@ -50,6 +50,7 @@ class TestMaDiffStreamingVsBatch:
     assert q.n_good_values >= 375
     assert q.n_bad_values_at_end == 0
     assert q.n_bad_values_at_start == q.n_bad_values
+    print("q.n_bad_values_at_start", q.n_bad_values_at_start)
     assert result.dfs_match, (
       "Batch and streaming MA-Diff results diverged.\n"
       f"Batch (up to mismatch):\n{result.df_batch_mismatch}\n\n"

@@ -106,7 +106,7 @@ class TestGetIndianMarketSessionInfo:
 
   def test_raises_for_non_utc_timezone(self) -> None:
     start = pd.Timestamp("2023-01-02 03:45:59.999000", tz="Asia/Kolkata")
-    idx = pd.date_range(start=start, periods=10, freq="T")
+    idx = pd.date_range(start=start, periods=10, freq="min")
     with pytest.raises(ValueError, match="UTC"):
       uf.get_indian_market_session_info(idx)
 

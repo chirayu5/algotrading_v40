@@ -28,7 +28,7 @@ class TestStochasticStreamingVsBatch:
     data = das.get_synthetic_data(
       instrument_descs=[inst_desc],
       date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 1),
+        start_date=dt.date(2023, 1, 2),
         end_date=dt.date(2023, 1, 3),
       ),
     )

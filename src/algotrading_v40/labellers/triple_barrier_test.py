@@ -63,8 +63,8 @@ class TestValidateAndRunTripleBarrier:
       else np.nan,
       axis=1,
     ).astype("float32")
-    print(result.to_string())
-    print(expected.to_string())
+    # print(result.to_string())
+    # print(expected.to_string())
     pd.testing.assert_frame_equal(result, expected)
 
   def test_long_stop_loss_barrier(self):

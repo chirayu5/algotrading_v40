@@ -18,9 +18,9 @@ class TestDetrendedRsiStreamingVsBatch:
     to the values obtained when the same data arrive one point at a time.
     """
     np.random.seed(42)
-    short_length = 7
-    long_length = 14
-    length = 21
+    short_length = 2
+    long_length = 20
+    length = 252
 
     inst_desc = sid.InstrumentDesc(
       market=sid.Market.INDIAN_MARKET,
@@ -29,7 +29,7 @@ class TestDetrendedRsiStreamingVsBatch:
     data = das.get_synthetic_data(
       instrument_descs=[inst_desc],
       date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 1),
+        start_date=dt.date(2023, 1, 2),
         end_date=dt.date(2023, 1, 3),
       ),
     )
