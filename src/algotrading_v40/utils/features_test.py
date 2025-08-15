@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import algotrading_v40.utils.features as uf
 import algotrading_v40.utils.streaming as us
 import algotrading_v40.utils.testing as ut
-from algotrading_v40.utils.features import get_indian_market_session_info
 
 TEST_INDEX = pd.DatetimeIndex(
   [
@@ -35,7 +35,7 @@ TEST_INDEX = pd.DatetimeIndex(
 class TestGetIndianMarketSessionInfo:
   def test_two_sessions_basic_properties(self) -> None:
     with ut.expect_no_mutation(TEST_INDEX):
-      df = get_indian_market_session_info(TEST_INDEX)
+      df = uf.get_indian_market_session_info(TEST_INDEX)
 
     expected_df = pd.DataFrame(
       {
@@ -100,7 +100,7 @@ class TestGetIndianMarketSessionInfo:
     df["close"] = np.random.uniform(df["low"], df["high"])
     df["volume"] = np.random.uniform(1000, 10000, len(df))
     result = us.compare_batch_and_stream(
-      df, lambda df_: get_indian_market_session_info(df_.index)
+      df, lambda df_: uf.get_indian_market_session_info(df_.index)
     )
     assert result.dfs_match
 
@@ -108,11 +108,11 @@ class TestGetIndianMarketSessionInfo:
     start = pd.Timestamp("2023-01-02 03:45:59.999000", tz="Asia/Kolkata")
     idx = pd.date_range(start=start, periods=10, freq="T")
     with pytest.raises(ValueError, match="UTC"):
-      get_indian_market_session_info(idx)
+      uf.get_indian_market_session_info(idx)
 
   def test_raises_for_time_outside_session_window(self) -> None:
     # one minute before market open
     invalid_start = pd.Timestamp("2023-01-02 03:44:59.999000", tz="UTC")
     idx = pd.date_range(start=invalid_start, periods=5, freq="min", tz="UTC")
     with pytest.raises(ValueError, match="All times must be between"):
-      get_indian_market_session_info(idx)
+      uf.get_indian_market_session_info(idx)
