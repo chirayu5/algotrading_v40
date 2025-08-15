@@ -7,6 +7,7 @@ void register_detrended_rsi(pybind11::module_ &);
 void register_stochastic(pybind11::module_ &);
 void register_stochastic_rsi(pybind11::module_ &);
 void register_ma_diff(pybind11::module_ &);
+void register_macd(pybind11::module_ &);
 
 // utils
 void register_features(pybind11::module_ &);
@@ -21,6 +22,7 @@ PYBIND11_MODULE(algotrading_v40_cpp, m) {
   register_stochastic(fc);
   register_stochastic_rsi(fc);
   register_ma_diff(fc);
+  register_macd(fc);
 
   // submodule: utils
   auto utils = m.def_submodule("utils", "utils");
