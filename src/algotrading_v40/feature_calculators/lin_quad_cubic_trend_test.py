@@ -1,0 +1,59 @@
+import datetime as dt
+
+import numpy as np
+import pandas as pd
+import pytest
+
+import algotrading_v40.data_accessors.synthetic as das
+import algotrading_v40.feature_calculators.lin_quad_cubic_trend as fc_lin_quad_cubic_trend
+import algotrading_v40.structures.date_range as sdr
+import algotrading_v40.structures.instrument_desc as sid
+import algotrading_v40.utils.df as udf
+import algotrading_v40.utils.streaming as us
+
+
+class TestLinQuadCubicTrendStreamingVsBatch:
+  @pytest.mark.parametrize("poly_degree", [1, 2])
+  def test_streaming_matches_batch(self, poly_degree: int) -> None:
+    np.random.seed(42)
+    lookback = 10
+    atr_length = 252
+
+    inst = sid.InstrumentDesc(
+      market=sid.Market.INDIAN_MARKET,
+      symbol="ABCD",
+    )
+    data = das.get_synthetic_data(
+      instrument_descs=[inst],
+      date_range=sdr.DateRange(
+        start_date=dt.date(2023, 1, 2),
+        end_date=dt.date(2023, 1, 3),
+      ),
+    )
+    df = data.get_full_df_for_instrument_desc(inst).copy()
+    df["volume"] = 1.0
+    dfb = df.copy()
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_lin_quad_cubic_trend.lin_quad_cubic_trend(
+        df_,
+        poly_degree=poly_degree,
+        lookback=lookback,
+        atr_length=atr_length,
+      ),
+    )
+    pd.testing.assert_frame_equal(df, dfb)
+    expected_col = f"lin_quad_cubic_trend_{poly_degree}_{lookback}_{atr_length}"
+    assert result.df_batch.columns == [expected_col]
+    assert result.df_batch.index.equals(df.index)
+
+    q = udf.analyse_numeric_series_quality(result.df_batch[expected_col])
+    assert q.n_good_values >= 375
+    assert q.n_bad_values_at_end == 0
+    assert q.n_bad_values_at_start == q.n_bad_values
+    print("q.n_bad_values_at_start", q.n_bad_values_at_start)
+    assert result.dfs_match, (
+      "Batch and streaming lin_quad_cubic_trend results diverged.\n"
+      f"Batch (up to mismatch):\n{result.df_batch_mismatch}\n\n"
+      f"Streaming:\n{result.df_stream_mismatch}"
+    )
