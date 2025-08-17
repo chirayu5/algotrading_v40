@@ -5,7 +5,6 @@ import algotrading_v40.utils.df as udf
 
 
 def ma_diff_(
-  open_: pd.Series,
   high: pd.Series,
   low: pd.Series,
   close: pd.Series,
@@ -13,13 +12,12 @@ def ma_diff_(
   long_length: int,
   lag: int,
 ) -> pd.Series:
-  for name, s in [("open", open_), ("high", high), ("low", low), ("close", close)]:
+  for name, s in [("high", high), ("low", low), ("close", close)]:
     if udf.analyse_numeric_series_quality(s).n_bad_values > 0:
       raise ValueError(f"{name} must not have bad values")
 
   return pd.Series(
     data=av40c_fc.ma_diff_cpp(
-      open_.values,
       high.values,
       low.values,
       close.values,
@@ -27,7 +25,7 @@ def ma_diff_(
       long_length,
       lag,
     ),
-    index=open_.index,
+    index=close.index,
   )
 
 
@@ -37,13 +35,11 @@ def ma_diff(
   long_length: int,
   lag: int,
 ) -> pd.DataFrame:
-  open_d = df["open"].shift(1)
   high_d = df["high"].shift(1)
   low_d = df["low"].shift(1)
   close_d = df["close"].shift(1)
 
   series = ma_diff_(
-    open_=open_d.iloc[1:],
     high=high_d.iloc[1:],
     low=low_d.iloc[1:],
     close=close_d.iloc[1:],
