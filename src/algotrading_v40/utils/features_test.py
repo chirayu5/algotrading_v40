@@ -116,3 +116,215 @@ class TestGetIndianMarketSessionInfo:
     idx = pd.date_range(start=invalid_start, periods=5, freq="min", tz="UTC")
     with pytest.raises(ValueError, match="All times must be between"):
       uf.get_indian_market_session_info(idx)
+
+
+class TestGetTimeBasedBarGroupForIndianMarket:
+  def test_1_minute_groups(self) -> None:
+    df = pd.DataFrame(index=TEST_INDEX)
+    df["open"] = np.random.uniform(100, 200, len(df))
+    df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+    df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+    df["close"] = np.random.uniform(df["low"], df["high"])
+    df["volume"] = np.random.uniform(1000, 10000, len(df))
+    with ut.expect_no_mutation(df):
+      result = uf.get_time_based_bar_group_for_indian_market(df, 1)
+    df["bar_group"] = result
+    np.testing.assert_array_equal(df.index.values, df["bar_group"].values)
+
+  def test_7_minute_groups(self) -> None:
+    test_index = pd.date_range(
+      start="2023-01-02 03:45:59.999000",
+      end="2023-01-02 04:00:59.999000",
+      freq="1min",
+      tz="UTC",
+    )
+    df = pd.DataFrame(index=test_index)
+    df["open"] = np.random.uniform(100, 200, len(df))
+    df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+    df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+    df["close"] = np.random.uniform(df["low"], df["high"])
+    df["volume"] = np.random.uniform(1000, 10000, len(df))
+    with ut.expect_no_mutation(df):
+      result = uf.get_time_based_bar_group_for_indian_market(df, 7)
+    df["bar_group"] = result
+
+    expected_times = pd.Series(
+      [
+        # first group
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        # second group
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:52:59.999000", tz="UTC"),
+        # third group (small but not the last group...so not merged)
+        pd.Timestamp("2023-01-02 03:59:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:59:59.999000", tz="UTC"),
+      ],
+      index=df.index,
+    )
+    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+
+  def test_last_small_group_is_merged(self) -> None:
+    test_index = pd.date_range(
+      start="2023-01-02 09:43:59.999000",
+      end="2023-01-02 09:59:59.999000",
+      freq="1min",
+      tz="UTC",
+    )
+    df = pd.DataFrame(index=test_index)
+    df["open"] = np.random.uniform(100, 200, len(df))
+    df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+    df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+    df["close"] = np.random.uniform(df["low"], df["high"])
+    df["volume"] = np.random.uniform(1000, 10000, len(df))
+    with ut.expect_no_mutation(df):
+      result = uf.get_time_based_bar_group_for_indian_market(df, 11)
+    df["bar_group"] = result
+
+    expected_times = pd.Series(
+      [
+        # 32nd group
+        pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
+        # 33rd group
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+        # single remaining bar included in the 33rd group only (small last group...merged)
+        pd.Timestamp("2023-01-02 09:48:59.999000", tz="UTC"),
+      ],
+      index=df.index,
+    )
+    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+
+  def test_last_adequate_group_is_not_merged(self) -> None:
+    test_index = pd.date_range(
+      start="2023-01-02 09:43:59.999000",
+      end="2023-01-02 09:59:59.999000",
+      freq="1min",
+      tz="UTC",
+    )
+    df = pd.DataFrame(index=test_index)
+    df["open"] = np.random.uniform(100, 200, len(df))
+    df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+    df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+    df["close"] = np.random.uniform(df["low"], df["high"])
+    df["volume"] = np.random.uniform(1000, 10000, len(df))
+    with ut.expect_no_mutation(df):
+      result = uf.get_time_based_bar_group_for_indian_market(df, 9)
+    df["bar_group"] = result
+
+    expected_times = pd.Series(
+      [
+        # 40th group (appears only partially in the input)
+        pd.Timestamp("2023-01-02 09:36:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:36:59.999000", tz="UTC"),
+        # 41st group
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:45:59.999000", tz="UTC"),
+        # incomplete adequately sized last 42nd group...so not merged
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 09:54:59.999000", tz="UTC"),
+      ],
+      index=df.index,
+    )
+    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+
+  def test_streamability(self) -> None:
+    test_index_1 = TEST_INDEX
+    test_index_2 = pd.date_range(
+      start="2023-01-02 03:45:59.999000",
+      end="2023-01-02 04:00:59.999000",
+      freq="1min",
+      tz="UTC",
+    )
+    test_index_3 = pd.date_range(
+      start="2023-01-02 09:43:59.999000",
+      end="2023-01-02 09:59:59.999000",
+      freq="1min",
+      tz="UTC",
+    )
+    for test_index, group_size in [
+      (test_index_1, 1),
+      (test_index_2, 7),
+      (test_index_3, 11),
+      (test_index_3, 9),
+    ]:
+      df = pd.DataFrame(index=test_index)
+      df["open"] = np.random.uniform(100, 200, len(df))
+      df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+      df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+      df["close"] = np.random.uniform(df["low"], df["high"])
+      df["volume"] = np.random.uniform(1000, 10000, len(df))
+      result = us.compare_batch_and_stream(
+        df, lambda df_: uf.get_time_based_bar_group_for_indian_market(df_, group_size)
+      )
+      assert result.dfs_match
+
+  def test_375_minute_groups(self) -> None:
+    df = pd.DataFrame(index=TEST_INDEX)
+    df["open"] = np.random.uniform(100, 200, len(df))
+    df["high"] = df["open"] + np.random.uniform(0, 10, len(df))
+    df["low"] = df["open"] - np.random.uniform(0, 10, len(df))
+    df["close"] = np.random.uniform(df["low"], df["high"])
+    df["volume"] = np.random.uniform(1000, 10000, len(df))
+    with ut.expect_no_mutation(df):
+      result = uf.get_time_based_bar_group_for_indian_market(df, 375)
+    df["bar_group"] = result
+
+    expected_times = pd.Series(
+      [
+        # Session 1 (2023-01-02)
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),  # first bar
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
+        # Session 2 (2023-01-04)
+        # first bar due to overnight gap and not time-based
+        # can happen if first bar is missing
+        pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
+        pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),  # last bar
+        # Session 3 (2023-01-10)
+        # incomplete session
+        pd.Timestamp("2023-01-10 03:45:59.999000", tz="UTC"),  # first bar
+        pd.Timestamp("2023-01-10 03:45:59.999000", tz="UTC"),
+      ],
+      index=df.index,
+    )
+    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
