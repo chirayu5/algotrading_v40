@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from algotrading_v40.data_selectors.cusum import validate_and_run_cusum
+import algotrading_v40.data_selectors.cusum as dsc
+import algotrading_v40.utils.testing as ut
 
 
 class TestValidateAndRunCusum:
@@ -23,8 +24,8 @@ class TestValidateAndRunCusum:
     h = 2.0
 
     expected = pd.Series([0, 1, -1, 1], index=index, dtype="int32")
-
-    result = validate_and_run_cusum(s, h)
+    with ut.expect_no_mutation(s):
+      result = dsc.validate_and_run_cusum(s, h, f_diff=lambda x: x.diff())
     pd.testing.assert_series_equal(result, expected)
 
   def test_threshold_equal_does_not_trigger(self) -> None:
@@ -33,7 +34,8 @@ class TestValidateAndRunCusum:
     h = 2.0
 
     expected = pd.Series([0, 0, 1], index=index, dtype="int32")
-    result = validate_and_run_cusum(s, h)
+    with ut.expect_no_mutation(s):
+      result = dsc.validate_and_run_cusum(s, h, f_diff=lambda x: x.diff())
     pd.testing.assert_series_equal(result, expected)
 
   def test_bad_values_in_s_raises(self) -> None:
@@ -42,7 +44,8 @@ class TestValidateAndRunCusum:
     h = 1.0
 
     with pytest.raises(ValueError, match="s must not have bad values"):
-      validate_and_run_cusum(s, h)
+      with ut.expect_no_mutation(s):
+        dsc.validate_and_run_cusum(s, h, f_diff=lambda x: x.diff())
 
   def test_non_positive_threshold_raises(self) -> None:
     index = self._make_index(3)
@@ -50,7 +53,8 @@ class TestValidateAndRunCusum:
     h = 0.0
 
     with pytest.raises(ValueError, match="cusum threshold must be greater than 0"):
-      validate_and_run_cusum(s, h)
+      with ut.expect_no_mutation(s):
+        dsc.validate_and_run_cusum(s, h, f_diff=lambda x: x.diff())
 
   def test_large_series(self) -> None:
     index = self._make_index(300)
@@ -80,5 +84,6 @@ class TestValidateAndRunCusum:
           break
 
     expected = pd.Series(expected, index=index, dtype="int32")
-    result = validate_and_run_cusum(s, h)
+    with ut.expect_no_mutation(s):
+      result = dsc.validate_and_run_cusum(s, h, f_diff=lambda x: x.diff())
     pd.testing.assert_series_equal(result, expected)
