@@ -96,3 +96,32 @@ def get_most_common_index_delta(
     most_common_index_delta=int(vcs.index[0]),
     index_delta_distribution=vcs,
   )
+
+
+############## GROUPING BY BAR GROUP ##############
+# Allows working with x minute bars instead of only 1 minute bars
+# Also allows using dollar bars
+
+
+@dataclasses.dataclass(frozen=True)
+class GroupByBarGroupResult:
+  df: pd.DataFrame
+  bar_group_size: pd.Series
+
+
+def group_by_bar_group(df: pd.DataFrame) -> GroupByBarGroupResult:
+  return GroupByBarGroupResult(
+    df=df.groupby(by="bar_group").agg(
+      {
+        "open": "first",
+        "high": "max",
+        "low": "min",
+        "close": "last",
+        "volume": "sum",
+      }
+    ),
+    bar_group_size=df.groupby(by="bar_group").size().astype("int64"),
+  )
+
+
+#################################################

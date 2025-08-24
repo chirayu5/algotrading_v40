@@ -6,6 +6,7 @@ import pytest
 
 import algotrading_v40.structures.date_range as sdr
 import algotrading_v40.utils.df as udf
+import algotrading_v40.utils.testing as ut
 
 
 class TestGetDfSliceInDateRange:
@@ -688,3 +689,200 @@ class TestGetMostCommonIndexDelta:
     # non-datetime index should error
     with pytest.raises(Exception):
       udf.get_most_common_index_delta(index)  # type: ignore
+
+
+class TestGroupByBarGroup:
+  def test_basic_grouping(self):
+    df = pd.DataFrame(
+      {
+        "open": [100, 105, 110, 115, 120],
+        "high": [102, 107, 112, 117, 122],
+        "low": [99, 104, 109, 114, 119],
+        "close": [101, 106, 111, 116, 121],
+        "volume": [1000, 1500, 2000, 2500, 3000],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:49:59.999+00:00"),
+        ],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+          "2021-01-01 03:48:59.999+00:00",
+          "2021-01-01 03:49:59.999+00:00",
+        ]
+      ),
+    )
+
+    with ut.expect_no_mutation(df):
+      result = udf.group_by_bar_group(df)
+
+    expected_df = pd.DataFrame(
+      {
+        "open": [100, 110, 120],
+        "high": [107, 117, 122],
+        "low": [99, 109, 119],
+        "close": [106, 116, 121],
+        "volume": [2500, 4500, 3000],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+          "2021-01-01 03:49:59.999+00:00",
+        ]
+      ),
+    )
+    expected_df.index.name = "bar_group"
+
+    expected_size = pd.Series(
+      [2, 2, 1],
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+          "2021-01-01 03:49:59.999+00:00",
+        ]
+      ),
+    )
+    expected_size.index.name = "bar_group"
+
+    pd.testing.assert_frame_equal(result.df, expected_df)
+    pd.testing.assert_series_equal(result.bar_group_size, expected_size)
+
+  def test_single_bar_group(self):
+    df = pd.DataFrame(
+      {
+        "open": [100, 105, 110],
+        "high": [102, 107, 112],
+        "low": [99, 104, 109],
+        "close": [101, 106, 111],
+        "volume": [1000, 1500, 2000],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        ],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+        ]
+      ),
+    )
+
+    with ut.expect_no_mutation(df):
+      result = udf.group_by_bar_group(df)
+
+    expected_df = pd.DataFrame(
+      {
+        "open": [100],
+        "high": [112],
+        "low": [99],
+        "close": [111],
+        "volume": [4500],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+        ]
+      ),
+    )
+    expected_df.index.name = "bar_group"
+
+    expected_size = pd.Series(
+      [3],
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+        ]
+      ),
+    )
+    expected_size.index.name = "bar_group"
+
+    pd.testing.assert_frame_equal(result.df, expected_df)
+    pd.testing.assert_series_equal(result.bar_group_size, expected_size)
+
+  def test_each_row_different_group(self):
+    df = pd.DataFrame(
+      {
+        "open": [100, 105, 110, 115],
+        "high": [102, 107, 112, 117],
+        "low": [99, 104, 109, 114],
+        "close": [101, 106, 111, 116],
+        "volume": [1000, 1500, 2000, 2500],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:48:59.999+00:00"),
+        ],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+          "2021-01-01 03:48:59.999+00:00",
+        ]
+      ),
+    )
+    with ut.expect_no_mutation(df):
+      result = udf.group_by_bar_group(df)
+      expected_df = df.copy().drop(columns=["bar_group"])
+      expected_df.index.name = "bar_group"
+
+    expected_size = pd.Series(
+      [1, 1, 1, 1],
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:59.999+00:00",
+          "2021-01-01 03:48:59.999+00:00",
+        ]
+      ),
+    )
+    expected_size.index.name = "bar_group"
+
+    pd.testing.assert_frame_equal(result.df, expected_df)
+    pd.testing.assert_series_equal(result.bar_group_size, expected_size)
+
+  def test_empty_dataframe(self):
+    df = pd.DataFrame(
+      {
+        "open": [100],
+        "high": [102],
+        "low": [99],
+        "close": [101],
+        "volume": [1000],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        ],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+        ]
+      ),
+    ).iloc[:0]  # empty dataframe
+
+    with ut.expect_no_mutation(df):
+      result = udf.group_by_bar_group(df)
+      expected_df = df.copy().drop(columns=["bar_group"])
+      expected_df.index.name = "bar_group"
+
+    expected_size = pd.Series(
+      [], dtype="int64", index=pd.DatetimeIndex([], dtype="datetime64[ns, UTC]")
+    )
+    expected_size.index.name = "bar_group"
+
+    pd.testing.assert_frame_equal(result.df, expected_df)
+    pd.testing.assert_series_equal(result.bar_group_size, expected_size)
