@@ -1,14 +1,9 @@
 import datetime as dt
 
-import numpy as np
-import pandas as pd
-
-import algotrading_v40.data_accessors.synthetic as das
 import algotrading_v40.feature_calculators.stochastic as fc_stoch
-import algotrading_v40.structures.date_range as sdr
-import algotrading_v40.structures.instrument_desc as sid
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
+import algotrading_v40.utils.testing as ut
 
 
 class TestStochasticStreamingVsBatch:
@@ -17,35 +12,22 @@ class TestStochasticStreamingVsBatch:
     The stochastic indicator calculated on the full price series should be identical
     to the values obtained when the same data arrive one point at a time.
     """
-    np.random.seed(42)
+    df = ut.get_test_df(
+      start_date=dt.date(2023, 1, 2),
+      end_date=dt.date(2023, 1, 3),
+    )
+
     lookback = 20
     n_to_smooth = 1
-
-    inst_desc = sid.InstrumentDesc(
-      market=sid.Market.INDIAN_MARKET,
-      symbol="ABCD",
-    )
-    data = das.get_synthetic_data(
-      instrument_descs=[inst_desc],
-      date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 2),
-        end_date=dt.date(2023, 1, 3),
-      ),
-    )
-
-    df = data.get_full_df_for_instrument_desc(inst_desc).copy()
-    df["volume"] = 1.0  # dummy volume column
-    dfb = df.copy()
-    result = us.compare_batch_and_stream(
-      df,
-      lambda df_: fc_stoch.stochastic(
-        df_,
-        lookback=lookback,
-        n_to_smooth=n_to_smooth,
-      ),
-    )
-    # input data should not be modified
-    pd.testing.assert_frame_equal(df, dfb)
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda df_: fc_stoch.stochastic(
+          df_,
+          lookback=lookback,
+          n_to_smooth=n_to_smooth,
+        ),
+      )
     expected_col = f"stochastic_{lookback}_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
 
