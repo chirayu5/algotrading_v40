@@ -1,6 +1,5 @@
 import datetime as dt
 
-import pandas as pd
 import pytest
 
 import algotrading_v40.feature_calculators.lin_quad_cubic_trend as fc_lin_quad_cubic_trend
@@ -19,17 +18,18 @@ class TestLinQuadCubicTrendStreamingVsBatch:
       start_date=dt.date(2023, 1, 2),
       end_date=dt.date(2023, 1, 3),
     )
-    dfb = df.copy()
-    result = us.compare_batch_and_stream(
-      df,
-      lambda df_: fc_lin_quad_cubic_trend.lin_quad_cubic_trend(
-        df_,
-        poly_degree=poly_degree,
-        lookback=lookback,
-        atr_length=atr_length,
-      ),
-    )
-    pd.testing.assert_frame_equal(df, dfb)
+
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda df_: fc_lin_quad_cubic_trend.lin_quad_cubic_trend(
+          df_,
+          poly_degree=poly_degree,
+          lookback=lookback,
+          atr_length=atr_length,
+        ),
+      )
+
     expected_col = f"lin_quad_cubic_trend_{poly_degree}_{lookback}_{atr_length}"
     assert result.df_batch.columns == [expected_col]
     assert result.df_batch.index.equals(df.index)

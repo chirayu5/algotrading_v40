@@ -1,7 +1,5 @@
 import datetime as dt
 
-import pandas as pd
-
 import algotrading_v40.feature_calculators.macd as fc_macd
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
@@ -18,17 +16,17 @@ class TestMacdStreamingVsBatch:
       start_date=dt.date(2023, 1, 2),
       end_date=dt.date(2023, 1, 3),
     )
-    dfb = df.copy()
-    result = us.compare_batch_and_stream(
-      df,
-      lambda df_: fc_macd.macd(
-        df_,
-        short_length=short_length,
-        long_length=long_length,
-        n_to_smooth=n_to_smooth,
-      ),
-    )
-    pd.testing.assert_frame_equal(df, dfb)
+
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda df_: fc_macd.macd(
+          df_,
+          short_length=short_length,
+          long_length=long_length,
+          n_to_smooth=n_to_smooth,
+        ),
+      )
     expected_col = f"macd_{short_length}_{long_length}_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
     assert result.df_batch.index.equals(df.index)

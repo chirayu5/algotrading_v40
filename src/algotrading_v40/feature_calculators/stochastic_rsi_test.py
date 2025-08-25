@@ -1,7 +1,5 @@
 import datetime as dt
 
-import pandas as pd
-
 import algotrading_v40.feature_calculators.stochastic_rsi as fc_srsi
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
@@ -22,19 +20,18 @@ class TestStochasticRsiStreamingVsBatch:
       start_date=dt.date(2023, 1, 2),
       end_date=dt.date(2023, 1, 3),
     )
-    dfb = df.copy()
 
-    result = us.compare_batch_and_stream(
-      df,
-      lambda d: fc_srsi.stochastic_rsi(
-        d,
-        rsi_lookback=rsi_lookback,
-        stoch_lookback=stoch_lookback,
-        n_to_smooth=n_to_smooth,
-      ),
-    )
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda d: fc_srsi.stochastic_rsi(
+          d,
+          rsi_lookback=rsi_lookback,
+          stoch_lookback=stoch_lookback,
+          n_to_smooth=n_to_smooth,
+        ),
+      )
 
-    pd.testing.assert_frame_equal(df, dfb)  # input not modified
     expected_col = f"stochastic_rsi_{rsi_lookback}_{stoch_lookback}_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
     assert result.df_batch.index.equals(df.index)

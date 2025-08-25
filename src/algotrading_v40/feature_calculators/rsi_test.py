@@ -1,7 +1,5 @@
 import datetime as dt
 
-import pandas as pd
-
 import algotrading_v40.feature_calculators.rsi as fc_rsi
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
@@ -20,13 +18,13 @@ class TestRsiStreamingVsBatch:
       start_date=dt.date(2023, 1, 2),
       end_date=dt.date(2023, 1, 3),
     )
-    dfb = df.copy()
-    result = us.compare_batch_and_stream(
-      df,
-      lambda df_: fc_rsi.rsi(df_, lookback),
-    )
-    # input data should not be modified
-    pd.testing.assert_frame_equal(df, dfb)
+
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda df_: fc_rsi.rsi(df_, lookback),
+      )
+
     assert result.df_batch.columns == [f"rsi_{lookback}"]
     # result should have the same index as the input data
     assert result.df_batch.index.equals(df.index)

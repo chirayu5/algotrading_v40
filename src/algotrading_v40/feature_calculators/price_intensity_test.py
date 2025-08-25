@@ -1,7 +1,5 @@
 import datetime as dt
 
-import pandas as pd
-
 import algotrading_v40.feature_calculators.price_intensity as fc_price_intensity
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
@@ -20,16 +18,16 @@ class TestPriceIntensityStreamingVsBatch:
       start_date=dt.date(2023, 1, 2),
       end_date=dt.date(2023, 1, 3),
     )
-    dfb = df.copy()
-    result = us.compare_batch_and_stream(
-      df,
-      lambda df_: fc_price_intensity.price_intensity(
-        df_,
-        n_to_smooth=n_to_smooth,
-      ),
-    )
-    # input data should not be modified
-    pd.testing.assert_frame_equal(df, dfb)
+
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(
+        df,
+        lambda df_: fc_price_intensity.price_intensity(
+          df_,
+          n_to_smooth=n_to_smooth,
+        ),
+      )
+
     expected_col = f"price_intensity_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
 
