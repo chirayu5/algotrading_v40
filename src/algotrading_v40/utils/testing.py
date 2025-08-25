@@ -1,9 +1,14 @@
 import copy
+import datetime as dt
 from contextlib import contextmanager
 from typing import Any, Iterable, List
 
 import numpy as np
 import pandas as pd
+
+import algotrading_v40.data_accessors.synthetic as das
+import algotrading_v40.structures.date_range as sdr
+import algotrading_v40.structures.instrument_desc as sid
 
 
 def _default_equal(a: Any, b: Any) -> bool:
@@ -35,3 +40,23 @@ def expect_no_mutation(
       raise AssertionError(
         f"Object number {i} was mutated: before={before!r}, after={after!r}"
       )
+
+
+def get_test_df(start_date: dt.date, end_date: dt.date) -> pd.DataFrame:
+  """
+  Get a test DataFrame with a dummy volume column set to 1.
+  """
+  inst_desc = sid.InstrumentDesc(
+    market=sid.Market.INDIAN_MARKET,
+    symbol="ABCD",
+  )
+  data = das.get_synthetic_data(
+    instrument_descs=[inst_desc],
+    date_range=sdr.DateRange(
+      start_date=start_date,
+      end_date=end_date,
+    ),
+  )
+  df = data.get_full_df_for_instrument_desc(inst_desc).copy()
+  df["volume"] = 1  # dummy volume column
+  return df
