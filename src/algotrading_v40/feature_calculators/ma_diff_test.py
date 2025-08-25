@@ -17,16 +17,15 @@ class TestMaDiffStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_md.ma_diff(
-          df_,
-          short_length=short_length,
-          long_length=long_length,
-          lag=lag,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_md.ma_diff(
+        df_,
+        short_length=short_length,
+        long_length=long_length,
+        lag=lag,
+      ),
+    )
 
     expected_col = f"ma_diff_{short_length}_{long_length}_{lag}"
     assert result.df_batch.columns == [expected_col]

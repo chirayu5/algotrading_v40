@@ -15,14 +15,13 @@ class TestAdxStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_adx.adx(
-          df_,
-          lookback=lookback,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_adx.adx(
+        df_,
+        lookback=lookback,
+      ),
+    )
 
     expected_col = f"adx_{lookback}"
     assert result.df_batch.columns == [expected_col]

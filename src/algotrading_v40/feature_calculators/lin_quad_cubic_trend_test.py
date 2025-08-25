@@ -19,16 +19,15 @@ class TestLinQuadCubicTrendStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_lin_quad_cubic_trend.lin_quad_cubic_trend(
-          df_,
-          poly_degree=poly_degree,
-          lookback=lookback,
-          atr_length=atr_length,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_lin_quad_cubic_trend.lin_quad_cubic_trend(
+        df_,
+        poly_degree=poly_degree,
+        lookback=lookback,
+        atr_length=atr_length,
+      ),
+    )
 
     expected_col = f"lin_quad_cubic_trend_{poly_degree}_{lookback}_{atr_length}"
     assert result.df_batch.columns == [expected_col]

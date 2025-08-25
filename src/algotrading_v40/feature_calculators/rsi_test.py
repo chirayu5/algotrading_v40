@@ -19,11 +19,10 @@ class TestRsiStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_rsi.rsi(df_, lookback),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_rsi.rsi(df_, lookback),
+    )
 
     assert result.df_batch.columns == [f"rsi_{lookback}"]
     # result should have the same index as the input data

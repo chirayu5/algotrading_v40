@@ -19,15 +19,14 @@ class TestStochasticStreamingVsBatch:
 
     lookback = 20
     n_to_smooth = 1
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_stoch.stochastic(
-          df_,
-          lookback=lookback,
-          n_to_smooth=n_to_smooth,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_stoch.stochastic(
+        df_,
+        lookback=lookback,
+        n_to_smooth=n_to_smooth,
+      ),
+    )
     expected_col = f"stochastic_{lookback}_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
 

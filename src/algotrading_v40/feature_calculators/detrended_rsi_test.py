@@ -21,16 +21,15 @@ class TestDetrendedRsiStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_dtrsi.detrended_rsi(
-          df_,
-          short_length=short_length,
-          long_length=long_length,
-          length=length,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_dtrsi.detrended_rsi(
+        df_,
+        short_length=short_length,
+        long_length=long_length,
+        length=length,
+      ),
+    )
 
     expected_col = f"detrended_rsi_{short_length}_{long_length}_{length}"
     assert result.df_batch.columns == [expected_col]

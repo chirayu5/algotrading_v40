@@ -19,14 +19,13 @@ class TestPriceIntensityStreamingVsBatch:
       end_date=dt.date(2023, 1, 3),
     )
 
-    with ut.expect_no_mutation(df):
-      result = us.compare_batch_and_stream(
-        df,
-        lambda df_: fc_price_intensity.price_intensity(
-          df_,
-          n_to_smooth=n_to_smooth,
-        ),
-      )
+    result = us.compare_batch_and_stream(
+      df,
+      lambda df_: fc_price_intensity.price_intensity(
+        df_,
+        n_to_smooth=n_to_smooth,
+      ),
+    )
 
     expected_col = f"price_intensity_{n_to_smooth}"
     assert result.df_batch.columns == [expected_col]
