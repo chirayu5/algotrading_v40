@@ -1,36 +1,23 @@
 import datetime as dt
 
-import numpy as np
 import pandas as pd
 
-import algotrading_v40.data_accessors.synthetic as das
 import algotrading_v40.feature_calculators.ma_diff as fc_md
-import algotrading_v40.structures.date_range as sdr
-import algotrading_v40.structures.instrument_desc as sid
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
+import algotrading_v40.utils.testing as ut
 
 
 class TestMaDiffStreamingVsBatch:
   def test_streaming_matches_batch(self) -> None:
-    np.random.seed(42)
     short_length = 10
     long_length = 100
     lag = 10
 
-    inst = sid.InstrumentDesc(
-      market=sid.Market.INDIAN_MARKET,
-      symbol="ABCD",
+    df = ut.get_test_df(
+      start_date=dt.date(2023, 1, 2),
+      end_date=dt.date(2023, 1, 3),
     )
-    data = das.get_synthetic_data(
-      instrument_descs=[inst],
-      date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 2),
-        end_date=dt.date(2023, 1, 3),
-      ),
-    )
-    df = data.get_full_df_for_instrument_desc(inst).copy()
-    df["volume"] = 1.0  # dummy volume column
     dfb = df.copy()
     result = us.compare_batch_and_stream(
       df,

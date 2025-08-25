@@ -1,37 +1,24 @@
 import datetime as dt
 
-import numpy as np
 import pandas as pd
 import pytest
 
-import algotrading_v40.data_accessors.synthetic as das
 import algotrading_v40.feature_calculators.lin_quad_cubic_trend as fc_lin_quad_cubic_trend
-import algotrading_v40.structures.date_range as sdr
-import algotrading_v40.structures.instrument_desc as sid
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
+import algotrading_v40.utils.testing as ut
 
 
 class TestLinQuadCubicTrendStreamingVsBatch:
   @pytest.mark.parametrize("poly_degree", [1, 2])
   def test_streaming_matches_batch(self, poly_degree: int) -> None:
-    np.random.seed(42)
     lookback = 10
     atr_length = 252
 
-    inst = sid.InstrumentDesc(
-      market=sid.Market.INDIAN_MARKET,
-      symbol="ABCD",
+    df = ut.get_test_df(
+      start_date=dt.date(2023, 1, 2),
+      end_date=dt.date(2023, 1, 3),
     )
-    data = das.get_synthetic_data(
-      instrument_descs=[inst],
-      date_range=sdr.DateRange(
-        start_date=dt.date(2023, 1, 2),
-        end_date=dt.date(2023, 1, 3),
-      ),
-    )
-    df = data.get_full_df_for_instrument_desc(inst).copy()
-    df["volume"] = 1.0
     dfb = df.copy()
     result = us.compare_batch_and_stream(
       df,
