@@ -129,6 +129,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     with ut.expect_no_mutation(df):
       result = uf.get_time_based_bar_group_for_indian_market(df, 1)
     df["bar_group"] = result
+    # the bar group should be the same as the index for one minute groups
     np.testing.assert_array_equal(df.index.values, df["bar_group"].values)
 
   def test_7_minute_groups(self) -> None:
@@ -148,7 +149,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       result = uf.get_time_based_bar_group_for_indian_market(df, 7)
     df["bar_group"] = result
 
-    expected_times = pd.Series(
+    expected_bar_groups = pd.Series(
       [
         # first group
         pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
@@ -172,7 +173,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       ],
       index=df.index,
     )
-    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+    np.testing.assert_array_equal(df["bar_group"].values, expected_bar_groups.values)
 
   def test_last_small_group_is_merged(self) -> None:
     test_index = pd.date_range(
@@ -191,7 +192,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       result = uf.get_time_based_bar_group_for_indian_market(df, 11)
     df["bar_group"] = result
 
-    expected_times = pd.Series(
+    expected_bar_groups = pd.Series(
       [
         # 32nd group
         pd.Timestamp("2023-01-02 09:37:59.999000", tz="UTC"),
@@ -216,7 +217,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       ],
       index=df.index,
     )
-    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+    np.testing.assert_array_equal(df["bar_group"].values, expected_bar_groups.values)
 
   def test_last_adequate_group_is_not_merged(self) -> None:
     test_index = pd.date_range(
@@ -235,7 +236,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       result = uf.get_time_based_bar_group_for_indian_market(df, 9)
     df["bar_group"] = result
 
-    expected_times = pd.Series(
+    expected_bar_groups = pd.Series(
       [
         # 40th group (appears only partially in the input)
         pd.Timestamp("2023-01-02 09:36:59.999000", tz="UTC"),
@@ -260,7 +261,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       ],
       index=df.index,
     )
-    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+    np.testing.assert_array_equal(df["bar_group"].values, expected_bar_groups.values)
 
   def test_streamability(self) -> None:
     test_index_1 = TEST_INDEX
@@ -304,7 +305,9 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       result = uf.get_time_based_bar_group_for_indian_market(df, 375)
     df["bar_group"] = result
 
-    expected_times = pd.Series(
+    # all values for a session are the same as 03:45:59.999000
+    # even if the 03:45:59.999000 bar does not exist in the input (Session 2 for example)
+    expected_bar_groups = pd.Series(
       [
         # Session 1 (2023-01-02)
         pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),  # first bar
@@ -314,7 +317,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
         pd.Timestamp("2023-01-02 03:45:59.999000", tz="UTC"),
         # Session 2 (2023-01-04)
         # first bar due to overnight gap and not time-based
-        # can happen if first bar is missing
+        # below first bar is 03:50:59.999000 in TEST_INDEX but it still belongs to the 03:45:59.999000 group
         pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
         pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
         pd.Timestamp("2023-01-04 03:45:59.999000", tz="UTC"),
@@ -327,4 +330,4 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       ],
       index=df.index,
     )
-    np.testing.assert_array_equal(df["bar_group"].values, expected_times.values)
+    np.testing.assert_array_equal(df["bar_group"].values, expected_bar_groups.values)
