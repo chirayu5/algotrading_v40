@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
 import algotrading_v40.utils.testing as ut
 
@@ -68,12 +69,31 @@ class TestCompareBatchAndStream:
     df = _make_df(6)
 
     # A simple, stream-safe function: double the open price
+    # and set maybe_nan_value to the previous close price
     def func(d: pd.DataFrame) -> pd.DataFrame:
-      return pd.DataFrame({"open_x2": d["open"] * 2}, index=d.index)
+      return pd.DataFrame(
+        {
+          "open_x2": d["open"] * 2,
+          "maybe_nan_value": [
+            np.nan if (i % 2 == 1) or (i - 1 < 0) else d["close"].iloc[i - 1]
+            for i in range(len(d))
+          ],
+        },
+        index=d.index,
+      )
 
     with ut.expect_no_mutation(df):
       result = us.compare_batch_and_stream(df, func)
 
+    assert (
+      udf.analyse_numeric_series_quality(result.df_batch["open_x2"]).n_good_values == 6
+    )
+    assert (
+      udf.analyse_numeric_series_quality(
+        result.df_batch["maybe_nan_value"]
+      ).n_good_values
+      >= 1  # at least one good value should be present
+    )
     assert result.dfs_match is True
     assert result.df_batch_mismatch is None
     assert result.df_stream_mismatch is None
@@ -89,7 +109,8 @@ class TestCompareBatchAndStream:
     def func(d: pd.DataFrame) -> pd.DataFrame:
       return d[["open", "close"]]
 
-    result = us.compare_batch_and_stream(df, func)
+    with ut.expect_no_mutation(df):
+      result = us.compare_batch_and_stream(df, func)
 
     assert result.dfs_match is False
     # The mismatch should be detected on the first streaming step
