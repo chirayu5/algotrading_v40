@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import date
 
 import numpy as np
@@ -6,6 +7,7 @@ import pytest
 
 import algotrading_v40.structures.date_range as sdr
 import algotrading_v40.utils.df as udf
+import algotrading_v40.utils.features as uf
 import algotrading_v40.utils.testing as ut
 
 
@@ -886,3 +888,104 @@ class TestGroupByBarGroup:
 
     pd.testing.assert_frame_equal(result.df, expected_df)
     pd.testing.assert_series_equal(result.bar_group_size, expected_size)
+
+
+class TestCalculateGroupedValues:
+  def test_basic_functionality(self):
+    df = pd.DataFrame(
+      {
+        "open": [100, 101, 102, 103],
+        "high": [105, 106, 107, 108],
+        "low": [95, 96, 97, 98],
+        "close": [104, 105, 106, 107],
+        "volume": [1000, 1100, 1200, 1300],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        ],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:29.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:29.999+00:00",
+        ]
+      ),
+    )
+
+    def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
+      return df_ + df_.shift(1)
+
+    with ut.expect_no_mutation(df):
+      result = udf.calculate_grouped_values(df, compute_func)
+
+    # Expected calculation:
+    # 1. Group by bar_group: first group has [100,105,95,104,1000] and [101,106,96,105,1100]
+    #    second group has [102,107,97,106,1200] and [103,108,98,107,1300]
+    # 2. Aggregate each group:
+    # first -> [100 (open so gets the first value),106 (high so gets the max),95 (low so gets the min),105 (close so gets the last value),2100 (volume so gets the sum)]
+    # second -> [102,108,97,107,2500]
+    # 3. Apply compute_func (df + df.shift(1)): first row becomes NaN, second row becomes first + second (100 + 102=202, 106 + 108=214, 95 + 97=192, 105 + 107=212, 2100 + 2500=4600)
+    # 4. Reindex back to original index: only the third row (start of second group) gets the computed value
+    expected = pd.DataFrame(
+      {
+        "open": [np.nan, np.nan, 202.0, np.nan],
+        "high": [np.nan, np.nan, 214.0, np.nan],
+        "low": [np.nan, np.nan, 192.0, np.nan],
+        "close": [np.nan, np.nan, 212.0, np.nan],
+        "volume": [np.nan, np.nan, 4600.0, np.nan],
+      },
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+          "2021-01-01 03:46:29.999+00:00",
+          "2021-01-01 03:46:59.999+00:00",
+          "2021-01-01 03:47:29.999+00:00",
+        ]
+      ),
+    )
+
+    pd.testing.assert_frame_equal(result, expected)
+
+  def test_no_grouping(self):
+    df = ut.get_test_df(
+      start_date=dt.date(2021, 1, 1),
+      end_date=dt.date(2021, 1, 2),
+    )
+    df["bar_group"] = uf.get_time_based_bar_group_for_indian_market(
+      df, group_size_minutes=1
+    )
+
+    def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
+      return 2 * df_
+
+    with ut.expect_no_mutation(df):
+      result = udf.calculate_grouped_values(df, compute_func)
+
+    pd.testing.assert_frame_equal(result, 2 * df.drop(columns=["bar_group"]))
+
+  def test_empty_dataframe(self):
+    # the actual data does not matter as we do [:0] on the dataframe to get an empty dataframe
+    df = pd.DataFrame(
+      {
+        "open": [100],
+        "high": [102],
+        "low": [99],
+        "close": [101],
+        "volume": [1000],
+        "bar_group": [pd.Timestamp("2021-01-01 03:45:59.999+00:00")],
+      },
+      index=pd.DatetimeIndex(["2021-01-01 03:45:59.999+00:00"]),
+    ).iloc[:0]
+    assert df.empty
+
+    def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
+      return pd.DataFrame({"test_col": df_["open"] * 2}, index=df_.index)
+
+    with ut.expect_no_mutation(df):
+      result = udf.calculate_grouped_values(df, compute_func)
+
+    pd.testing.assert_index_equal(result.index, df.index)

@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -125,3 +126,13 @@ def group_by_bar_group(df: pd.DataFrame) -> GroupByBarGroupResult:
 
 
 #################################################
+
+#################### CALCULATE GROUPED VERSION OF VALUES ############
+
+
+def calculate_grouped_values(
+  df: pd.DataFrame,
+  compute_func: Callable[[pd.DataFrame], pd.DataFrame],
+) -> pd.DataFrame:
+  dfg = group_by_bar_group(df)
+  return compute_func(dfg.df).reindex(df.index)
