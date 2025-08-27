@@ -178,6 +178,12 @@ def probability_position_sizer_(
       raise ValueError(
         "open_price, high_price_prev, and low_price_prev must be positive"
       )
+    if not (
+      np.isfinite(open_price_i)
+      and np.isfinite(high_price_prev)
+      and np.isfinite(low_price_prev)
+    ):
+      raise ValueError("open_price, high_price_prev, and low_price_prev must be finite")
     sel_i = selected.iloc[i]
     tpb_i = tpb.iloc[i]
     slb_i = slb.iloc[i]
@@ -217,23 +223,32 @@ def probability_position_sizer_(
 
     raw_qa_positions[i] = average_bets(bets=active_bets_now)
     # discretise_position does bankers rounding and does not always round down
-    # this is fine since we clip the position to be between -1 and 1 on the next line
+    # this is fine since we clip the position to be between -qa_max and qa_max
+    # on the next line
     rdqa_pos_i = discretise_position(
       position=raw_qa_positions[i], step_size=qa_step_size
     )
-    discretised_qa_positions[i] = qa_max * np.clip(
-      a=rdqa_pos_i,
-      a_min=-1,
-      a_max=1,
+    discretised_qa_positions[i] = np.clip(
+      a=qa_max * rdqa_pos_i,
+      a_min=-qa_max,
+      a_max=qa_max,
     )
-    final_ba_position[i] = discretised_qa_positions[i] / open_price_i
-    if ba_step_size is not None:
-      # always round down in magnitude to the nearest step size
-      final_ba_position[i] = (
-        np.sign(final_ba_position[i])
-        * np.floor(np.abs(final_ba_position[i]) / ba_step_size)
-        * ba_step_size
-      )
+
+    # Prevent unnecessary base asset position changes when quote asset position is unchanged.
+    # This avoids spurious trades caused by price movements when the underlying position
+    # sizing decision (discretised_qa_position) hasn't actually changed.
+    if i > 0 and discretised_qa_positions[i - 1] == discretised_qa_positions[i]:
+      final_ba_position[i] = final_ba_position[i - 1]
+    else:
+      final_ba_position[i] = discretised_qa_positions[i] / open_price_i
+      if ba_step_size is not None:
+        # always round down in magnitude to the nearest step size
+        final_ba_position[i] = (
+          np.sign(final_ba_position[i])
+          * np.floor(np.abs(final_ba_position[i]) / ba_step_size)
+          * ba_step_size
+        )
+
     active_bets = active_bets_now
 
   return pd.DataFrame(
@@ -255,7 +270,8 @@ def probability_position_sizer(
   ba_step_size: float | None,
   qa_max: float,
 ) -> pd.DataFrame:
-  return probability_position_sizer_(
+  df["close_timestamp_int"] = df.index.astype(int)
+  res = probability_position_sizer_(
     prob=df["prob"],
     side=df["side"],
     open=df["open"],
@@ -264,9 +280,11 @@ def probability_position_sizer(
     selected=df["selected"],
     tpb=df["tpb"],
     slb=df["slb"],
-    close_timestamp_int=df.index.astype(int),
+    close_timestamp_int=df["close_timestamp_int"],
     vb_timestamp_int_exec=df["vb_timestamp_exec"].astype(int),
     qa_step_size=qa_step_size,
     ba_step_size=ba_step_size,
     qa_max=qa_max,
   )
+  df.drop(columns=["close_timestamp_int"], inplace=True)
+  return res
