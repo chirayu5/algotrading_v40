@@ -298,3 +298,46 @@ def test_discretised_position_bounds(p: float):
   print(out.to_string())
   dpos = out.loc[idx[-1], "discretised_qa_position"]
   assert -QA_MAX <= dpos <= QA_MAX
+
+
+# --------------------------------------------------------------------------- #
+# 9. unchanged QA position ⇒ unchanged BA position                            #
+# --------------------------------------------------------------------------- #
+def test_final_ba_position_unchanged_when_qa_position_same():
+  idx = [START, START + ONE_MIN]
+  df = make_df(idx)
+
+  # open one long bet on the first row
+  df.loc[idx[0], ["prob", "selected"]] = (0.70, 1)
+
+  # keep QA position the same on row-1 (selected = 0 → no new bet)
+  # but change the open price to a different value to check that BA
+  # position stays constant even though price moved.
+  # choose a price change < +3 % so the original bet is NOT closed by TP
+  df.loc[idx[1], ["open", "selected"]] = (101.0, 0)
+
+  # simulate streaming – last bar’s high/low are still unknown
+  df.loc[idx[-1], ["high", "low"]] = np.nan
+  print()
+  print("--------------------------------")
+  print("data for test_final_ba_position_unchanged_when_qa_position_same:")
+  print(df.to_string())
+
+  out = psp.probability_position_sizer(
+    df=df,
+    qa_step_size=QA_STEP,
+    ba_step_size=BA_STEP_NONE,
+    qa_max=QA_MAX,
+  )
+  print("output for test_final_ba_position_unchanged_when_qa_position_same:")
+  print(out.to_string())
+
+  # BA position on the second row should equal BA position on the first row
+  assert np.isclose(
+    out.loc[idx[1], "final_ba_position"],
+    out.loc[idx[0], "final_ba_position"],
+  )
+  # Additionally, ensure it is *not* equal to what it would be if
+  # recomputed using the new price (would trigger an unnecessary trade)
+  recomputed = out.loc[idx[0], "discretised_qa_position"] / df.loc[idx[1], "open"]
+  assert not np.isclose(out.loc[idx[1], "final_ba_position"], recomputed)
