@@ -61,18 +61,18 @@ def test_average_of_multiple_long_bets():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_average_of_multiple_long_bets:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_average_of_multiple_long_bets:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_average_of_multiple_long_bets:")
-  print(out.to_string())
+  # print("output for test_average_of_multiple_long_bets:")
+  # print(out.to_string())
   size_a = psp.get_size(0.60)
   size_c = psp.get_size(0.85)
   expected = (size_a + size_c) / 2
@@ -94,18 +94,18 @@ def test_average_long_and_short_bets():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_average_long_and_short_bets:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_average_long_and_short_bets:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_average_long_and_short_bets:")
-  print(out.to_string())
+  # print("output for test_average_long_and_short_bets:")
+  # print(out.to_string())
   size_long = psp.get_size(0.65)
   size_short = psp.get_size(0.80)
   expected = (size_long * 1 + size_short * -1) / 2
@@ -125,18 +125,18 @@ def test_open_new_long_bet():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_open_new_long_bet:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_open_new_long_bet:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_open_new_long_bet:")
-  print(out.to_string())
+  # print("output for test_open_new_long_bet:")
+  # print(out.to_string())
   expected = psp.get_size(0.75)  # only one active bet
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
@@ -153,18 +153,18 @@ def test_open_new_short_bet():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_open_new_short_bet:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_open_new_short_bet:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_open_new_short_bet:")
-  print(out.to_string())
+  # print("output for test_open_new_short_bet:")
+  # print(out.to_string())
   expected = psp.get_size(0.80) * -1
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
@@ -188,10 +188,10 @@ def test_long_bet_closed_at_stop_loss():
 
   # simulate streaming – for the last (incomplete) bar we don't yet know high/low
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_long_bet_closed_at_stop_loss:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_long_bet_closed_at_stop_loss:")
+  # print(df.to_string())
 
   out = psp.probability_position_sizer(
     df=df,
@@ -199,8 +199,8 @@ def test_long_bet_closed_at_stop_loss():
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_long_bet_closed_at_stop_loss:")
-  print(out.to_string())
+  # print("output for test_long_bet_closed_at_stop_loss:")
+  # print(out.to_string())
   expected = psp.get_size(0.60)  # only Bet #1 is still active
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
@@ -220,18 +220,18 @@ def test_short_bet_closed_at_take_profit():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_short_bet_closed_at_take_profit:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_short_bet_closed_at_take_profit:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_short_bet_closed_at_take_profit:")
-  print(out.to_string())
+  # print("output for test_short_bet_closed_at_take_profit:")
+  # print(out.to_string())
   assert np.isclose(out.loc[idx[0], "raw_qa_position"], -psp.get_size(0.75))
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], 0.0)
 
@@ -251,18 +251,18 @@ def test_bets_closed_by_vertical_barrier():
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_bets_closed_by_vertical_barrier:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_bets_closed_by_vertical_barrier:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_bets_closed_by_vertical_barrier:")
-  print(out.to_string())
+  # print("output for test_bets_closed_by_vertical_barrier:")
+  # print(out.to_string())
   # one bet open
   assert np.isclose(out.loc[idx[0], "raw_qa_position"], psp.get_size(0.65))
   # two bets open
@@ -284,18 +284,18 @@ def test_discretised_position_bounds(p: float):
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_discretised_position_bounds:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_discretised_position_bounds:")
+  # print(df.to_string())
   out = psp.probability_position_sizer(
     df=df,
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_discretised_position_bounds:")
-  print(out.to_string())
+  # print("output for test_discretised_position_bounds:")
+  # print(out.to_string())
   dpos = out.loc[idx[-1], "discretised_qa_position"]
   assert -QA_MAX <= dpos <= QA_MAX
 
@@ -318,10 +318,10 @@ def test_final_ba_position_unchanged_when_qa_position_same():
 
   # simulate streaming – last bar’s high/low are still unknown
   df.loc[idx[-1], ["high", "low"]] = np.nan
-  print()
-  print("--------------------------------")
-  print("data for test_final_ba_position_unchanged_when_qa_position_same:")
-  print(df.to_string())
+  # print()
+  # print("--------------------------------")
+  # print("data for test_final_ba_position_unchanged_when_qa_position_same:")
+  # print(df.to_string())
 
   out = psp.probability_position_sizer(
     df=df,
@@ -329,8 +329,8 @@ def test_final_ba_position_unchanged_when_qa_position_same():
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
-  print("output for test_final_ba_position_unchanged_when_qa_position_same:")
-  print(out.to_string())
+  # print("output for test_final_ba_position_unchanged_when_qa_position_same:")
+  # print(out.to_string())
 
   # BA position on the second row should equal BA position on the first row
   assert np.isclose(
@@ -341,3 +341,54 @@ def test_final_ba_position_unchanged_when_qa_position_same():
   # recomputed using the new price (would trigger an unnecessary trade)
   recomputed = out.loc[idx[0], "discretised_qa_position"] / df.loc[idx[1], "open"]
   assert not np.isclose(out.loc[idx[1], "final_ba_position"], recomputed)
+
+
+# --------------------------------------------------------------------------- #
+# 10. BA position is rounded down to the nearest step                         #
+# --------------------------------------------------------------------------- #
+def test_final_ba_position_is_rounded_down_to_step():
+  idx = [START]  # single bar is enough
+  df = make_df(idx)
+
+  # open a long bet with probability chosen to give a non-integer BA position
+  prob_val = 0.75
+  open_price = 123.45
+  df.loc[idx[0], ["prob", "selected", "open", "high", "low"]] = (
+    prob_val,
+    1,
+    open_price,
+    open_price,
+    open_price,
+  )
+
+  # BA step size for rounding
+  BA_STEP = 0.2  # choose a convenient step
+  # print()
+  # print("--------------------------------")
+  # print("data for test_final_ba_position_is_rounded_down_to_step:")
+  # print(df.to_string())
+
+  out = psp.probability_position_sizer(
+    df=df,
+    qa_step_size=QA_STEP,
+    ba_step_size=BA_STEP,
+    qa_max=QA_MAX,
+  )
+
+  # print("output for test_final_ba_position_is_rounded_down_to_step:")
+  # print(out.to_string())
+
+  # --- expected value -------------------------------------------------------
+  size = psp.get_size(prob_val)  # raw QA size (between 0-1)
+  rdqa = psp.discretise_position(size, QA_STEP)  # after QA discretisation
+  discretised_qa_position = rdqa * QA_MAX  # quote-asset position
+  unrounded_ba = discretised_qa_position / open_price  # before BA rounding
+  expected_ba = (
+    np.sign(unrounded_ba) * np.floor(np.abs(unrounded_ba) / BA_STEP) * BA_STEP
+  )
+  # --------------------------------------------------------------------------
+  # without the flooring logic, this value would be 0.353422
+  # with rounding instead of flooring, this value would be 0.4
+  # correct value should be 0.2
+  assert np.isclose(expected_ba, 0.2)
+  assert np.isclose(out.loc[idx[0], "final_ba_position"], expected_ba)
