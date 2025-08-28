@@ -1,5 +1,6 @@
 import dataclasses
 
+import algotrading_v40_cpp.position_sizers as av40c_ps
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -264,27 +265,80 @@ def probability_position_sizer_(
   )
 
 
+def probability_position_sizer_V2_(
+  prob: pd.Series,  # probability of the prediction being correct
+  side: pd.Series,  # 1 or -1
+  open: pd.Series,  # open price series from OHLCV bars
+  high: pd.Series,  # high price series from OHLCV bars
+  low: pd.Series,  # low price series from OHLCV bars
+  selected: pd.Series,  # whether a new bet can be opened on this index. existing bets can be closed at all indices though.
+  tpb: pd.Series,  # take profit barriers; a take profit of 3% will be 0.03
+  slb: pd.Series,  # stop loss barriers; signed; so a stop loss of 3% will be -0.03
+  close_timestamp_int: pd.Series,  # integer representation of the index timestamp
+  # example: 2021-01-01 03:45:59.999000+00:00 -> 1609472759999000000
+  # (can be found by doing `df.index.astype(int)`)
+  vb_timestamp_int_exec: pd.Series,  # integer timestamp of vertical barriers
+  # any bet opened here needs to be closed on or before this timestamp.
+  # the _exec (execution) suffix is needed as vertical barriers during execution can
+  # be different from vertical barriers during labelling.
+  # example - while labelling, we might always set the vertical barrier to be 1 hour away from current time.
+  # but during execution, we might need to always close all positions before the end of
+  # a session.
+  # ------------------------------------------------------------------------------------------------
+  # qa_step_size: step size for discretising the dimensionless position size (i.e. between -1 and 1)
+  # should be in (0,1]
+  qa_step_size: float,
+  # step size for discretising position sizes in base asset (stock units, BTCUSDT units, etc.)
+  ba_step_size: float | None,
+  # maximum absolute position size in quote asset (INR, USD, USDT, etc.)
+  qa_max: float,
+) -> pd.DataFrame:
+  return pd.DataFrame(
+    data=av40c_ps.probability_position_sizer_cpp(
+      prob=prob.values,
+      side=side.values,
+      open=open.values,
+      high=high.values,
+      low=low.values,
+      selected=selected.values,
+      tpb=tpb.values,
+      slb=slb.values,
+      close_timestamp_int=close_timestamp_int.values,
+      vb_timestamp_int_exec=vb_timestamp_int_exec.values,
+      qa_step_size=qa_step_size,
+      ba_step_size=ba_step_size,
+      qa_max=qa_max,
+    ),
+    index=prob.index,
+  )
+
+
 def probability_position_sizer(
   df: pd.DataFrame,
   qa_step_size: float,
   ba_step_size: float | None,
   qa_max: float,
+  use_cpp: bool = False,
 ) -> pd.DataFrame:
   df["close_timestamp_int"] = df.index.astype(int)
-  res = probability_position_sizer_(
-    prob=df["prob"],
-    side=df["side"],
-    open=df["open"],
-    high=df["high"],
-    low=df["low"],
-    selected=df["selected"],
-    tpb=df["tpb"],
-    slb=df["slb"],
-    close_timestamp_int=df["close_timestamp_int"],
-    vb_timestamp_int_exec=df["vb_timestamp_exec"].astype(int),
-    qa_step_size=qa_step_size,
-    ba_step_size=ba_step_size,
-    qa_max=qa_max,
-  )
+  kwargs = {
+    "prob": df["prob"],
+    "side": df["side"],
+    "open": df["open"],
+    "high": df["high"],
+    "low": df["low"],
+    "selected": df["selected"],
+    "tpb": df["tpb"],
+    "slb": df["slb"],
+    "close_timestamp_int": df["close_timestamp_int"],
+    "vb_timestamp_int_exec": df["vb_timestamp_exec"].astype(int),
+    "qa_step_size": qa_step_size,
+    "ba_step_size": ba_step_size,
+    "qa_max": qa_max,
+  }
+  if use_cpp:
+    res = probability_position_sizer_V2_(**kwargs)
+  else:
+    res = probability_position_sizer_(**kwargs)
   df.drop(columns=["close_timestamp_int"], inplace=True)
   return res

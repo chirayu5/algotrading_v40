@@ -437,7 +437,7 @@ def test_new_bet_immediately_closed_by_vertical_barrier():
 
 
 # --------------------------------------------------------------------------- #
-# 11. stream vs batch                                                          #
+# 11. stream vs batch                                                         #
 # --------------------------------------------------------------------------- #
 def test_stream_vs_batch():
   np.random.seed(42)
@@ -468,6 +468,7 @@ def test_stream_vs_batch():
       qa_step_size=QA_STEP,
       ba_step_size=1,
       qa_max=100000,
+      use_cpp=True,
     )
 
   result = us.compare_batch_and_stream(
@@ -475,3 +476,40 @@ def test_stream_vs_batch():
     inner_,
   )
   assert result.dfs_match
+
+
+# --------------------------------------------------------------------------- #
+# 12. py vs cpp match                                                          #
+# --------------------------------------------------------------------------- #
+def test_py_cpp_match():
+  np.random.seed(42)
+  df = ut.get_test_df(
+    start_date=dt.date(2023, 1, 2),
+    end_date=dt.date(2023, 6, 2),
+  )
+  n = len(df)
+  df["prob"] = np.random.uniform(0.5, 1, n)
+  df["side"] = np.random.choice([-1, 1], n)
+  df["selected"] = np.random.choice([0, 1], n)
+  df["tpb"] = np.random.uniform(0.01, 0.1, n)
+  df["slb"] = np.random.uniform(-0.1, -0.01, n)
+  df["vb_timestamp_exec"] = df.index + pd.to_timedelta(
+    np.random.randint(1, 81, n), unit="min"
+  )
+
+  cpp_res = psp.probability_position_sizer(
+    df=df,
+    qa_step_size=QA_STEP,
+    ba_step_size=1,
+    qa_max=QA_MAX,
+    use_cpp=True,
+  )
+  py_res = psp.probability_position_sizer(
+    df=df,
+    qa_step_size=QA_STEP,
+    ba_step_size=1,
+    qa_max=QA_MAX,
+    use_cpp=False,
+  )
+
+  pd.testing.assert_frame_equal(cpp_res, py_res)
