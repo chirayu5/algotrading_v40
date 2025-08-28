@@ -1,8 +1,12 @@
+import datetime as dt
+
 import numpy as np
 import pandas as pd
 import pytest
 
 import algotrading_v40.position_sizers.probability as psp
+import algotrading_v40.utils.streaming as us
+import algotrading_v40.utils.testing as ut
 
 # --------------------------------------------------------------------------- #
 # helpers                                                                     #
@@ -38,8 +42,8 @@ def make_df(index: list[pd.Timestamp]) -> pd.DataFrame:
 
 
 # a configuration that avoids extra rounding inside the sizing routine
-QA_STEP = 1e-4
-QA_MAX = 100.0
+QA_STEP = 1e-1
+QA_MAX = 1e5
 BA_STEP_NONE = None  # no BA rounding
 
 
@@ -362,7 +366,7 @@ def test_final_ba_position_is_rounded_down_to_step():
   )
 
   # BA step size for rounding
-  BA_STEP = 0.2  # choose a convenient step
+  BA_STEP = 15  # choose a convenient step
   # print()
   # print("--------------------------------")
   # print("data for test_final_ba_position_is_rounded_down_to_step:")
@@ -387,8 +391,87 @@ def test_final_ba_position_is_rounded_down_to_step():
     np.sign(unrounded_ba) * np.floor(np.abs(unrounded_ba) / BA_STEP) * BA_STEP
   )
   # --------------------------------------------------------------------------
-  # without the flooring logic, this value would be 0.353422
-  # with rounding instead of flooring, this value would be 0.4
-  # correct value should be 0.2
-  assert np.isclose(expected_ba, 0.2)
+  # without the flooring logic, this value would be 324.017821
+  # with rounding instead of flooring, this value would be 330.0
+  # correct value should be 315.0
+  assert np.isclose(expected_ba, 315.0)
   assert np.isclose(out.loc[idx[0], "final_ba_position"], expected_ba)
+
+
+# --------------------------------------------------------------------------- #
+# 11. new bet is opened and immediately closed by its vertical barrier        #
+# --------------------------------------------------------------------------- #
+def test_new_bet_immediately_closed_by_vertical_barrier():
+  idx = [START]
+  df = make_df(idx)
+
+  # configure the bar so that:
+  # • a new long bet is opened (selected = 1)
+  # • the vertical barrier is the bar's own close-timestamp ⇒ immediate close
+  prob_val = 0.80
+  df.loc[idx[0], ["prob", "selected", "vb_timestamp_exec"]] = (
+    prob_val,
+    1,
+    ns(idx[0]),  # barrier hit NOW
+  )
+
+  # print()
+  # print("--------------------------------")
+  # print("data for test_new_bet_immediately_closed_by_vertical_barrier:")
+  # print(df.to_string())
+
+  out = psp.probability_position_sizer(
+    df=df,
+    qa_step_size=QA_STEP,
+    ba_step_size=BA_STEP_NONE,
+    qa_max=QA_MAX,
+  )
+
+  # print("output for test_new_bet_immediately_closed_by_vertical_barrier:")
+  # print(out.to_string())
+
+  # bet must be closed in the same bar ⇒ all positions zero
+  assert np.isclose(out.loc[idx[0], "raw_qa_position"], 0.0)
+  assert np.isclose(out.loc[idx[0], "discretised_qa_position"], 0.0)
+  assert np.isclose(out.loc[idx[0], "final_ba_position"], 0.0)
+
+
+# --------------------------------------------------------------------------- #
+# 11. stream vs batch                                                          #
+# --------------------------------------------------------------------------- #
+def test_stream_vs_batch():
+  np.random.seed(42)
+  df = ut.get_test_df(
+    start_date=dt.date(2023, 1, 2),
+    end_date=dt.date(2023, 1, 3),
+  )
+  n = len(df)
+  prob = np.random.uniform(0.5, 1, n)
+  side = np.random.choice([-1, 1], n)
+  selected = np.random.choice([0, 1], n)
+  tpb = np.random.uniform(0.01, 0.1, n)
+  slb = np.random.uniform(-0.1, -0.01, n)
+  vb_timestamp_exec = df.index + pd.to_timedelta(
+    np.random.randint(1, 81, n), unit="min"
+  )
+
+  def inner_(df_: pd.DataFrame) -> pd.DataFrame:
+    n_ = len(df_)
+    df_["prob"] = prob[:n_]
+    df_["side"] = side[:n_]
+    df_["selected"] = selected[:n_]
+    df_["tpb"] = tpb[:n_]
+    df_["slb"] = slb[:n_]
+    df_["vb_timestamp_exec"] = vb_timestamp_exec[:n_]
+    return psp.probability_position_sizer(
+      df=df_,
+      qa_step_size=QA_STEP,
+      ba_step_size=1,
+      qa_max=100000,
+    )
+
+  result = us.compare_batch_and_stream(
+    df,
+    inner_,
+  )
+  assert result.dfs_match

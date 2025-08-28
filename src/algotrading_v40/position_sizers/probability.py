@@ -193,23 +193,12 @@ def probability_position_sizer_(
     if tpb_i <= 0 or slb_i >= 0:
       raise ValueError("tpb and slb must be positive and negative respectively")
 
-    # close bets that hit any of the barriers
-    active_bets_now = [
-      bet
-      for bet in active_bets
-      if not bet.should_close(
-        current_timestamp_int=close_ts_int_i,
-        highest_price=max(high_price_prev, open_price_i),
-        lowest_price=min(low_price_prev, open_price_i),
-      )
-    ]
-
     # open new bet if timestamp is selected by the data selector upstream
     if sel_i == 1:
       # prob_i is enforced to be >= 0.5
       # so size would be >= 0
       size = get_size(prob=prob_i)
-      active_bets_now.append(
+      active_bets.append(
         Bet(
           size=size,
           side=side_i,
@@ -221,7 +210,20 @@ def probability_position_sizer_(
         )
       )
 
-    raw_qa_positions[i] = average_bets(bets=active_bets_now)
+    # close bets that hit any of the barriers
+    # this is done after opening a new bet to handle the case where the
+    # new bet needs to be closed as well
+    active_bets = [
+      bet
+      for bet in active_bets
+      if not bet.should_close(
+        current_timestamp_int=close_ts_int_i,
+        highest_price=max(high_price_prev, open_price_i),
+        lowest_price=min(low_price_prev, open_price_i),
+      )
+    ]
+
+    raw_qa_positions[i] = average_bets(bets=active_bets)
     # discretise_position does bankers rounding and does not always round down
     # this is fine since we clip the position to be between -qa_max and qa_max
     # on the next line
@@ -248,8 +250,6 @@ def probability_position_sizer_(
           * np.floor(np.abs(final_ba_position[i]) / ba_step_size)
           * ba_step_size
         )
-
-    active_bets = active_bets_now
 
   return pd.DataFrame(
     {
