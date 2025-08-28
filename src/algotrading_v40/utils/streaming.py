@@ -41,7 +41,7 @@ class CompareBatchAndStreamResult:
 
 
 def compare_batch_and_stream(
-  df: pd.DataFrame, func: Callable[pd.DataFrame, pd.DataFrame]
+  df: pd.DataFrame, func: Callable[[pd.DataFrame], pd.DataFrame]
 ) -> CompareBatchAndStreamResult:
   streamer = DfStreamer(df)
   df_batch = func(df)
