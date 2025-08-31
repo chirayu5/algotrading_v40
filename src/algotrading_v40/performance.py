@@ -67,7 +67,7 @@ def compute_backtesting_return(
     need = abs(delta)
 
     # affordability criterion:
-    cost_total = need * (px + need * px * commission_rate)
+    cost_total = need * (px + px * commission_rate)
 
     avail = max(
       0.0, equity(p=px, cash=cash, trades=trades) - margin_used(p=px, trades=trades)
