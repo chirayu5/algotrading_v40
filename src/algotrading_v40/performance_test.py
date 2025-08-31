@@ -9,6 +9,7 @@ import algotrading_v40.data_accessors.cleaned as dac
 import algotrading_v40.performance as perf
 import algotrading_v40.structures.date_range as sdr
 import algotrading_v40.structures.instrument_desc as sid
+import algotrading_v40.utils.testing as ut
 
 
 class PositionStrategy(Strategy):
@@ -41,28 +42,45 @@ def _prepare_df() -> pd.DataFrame:
     columns={"open": "Open", "high": "High", "low": "Low", "close": "Close"}
   )
   start = np.random.randint(0, len(df_icici) - 100)
-  df_icici = df_icici.iloc[start : start + 20].copy()
+  df_icici = df_icici.iloc[start : start + 5].copy()
   return df_icici
 
 
 def test_compute_backtesting_return_matches_backtesting_library():
-  np.random.seed(257055)
-
-  df = _prepare_df()
-  df["volume"] = 1
+  df = pd.DataFrame(
+    {
+      "Open": [551.05, 550.90, 550.70, 551.00, 551.30],
+      "High": [551.05, 550.95, 551.05, 551.45, 551.35],
+      "Low": [550.75, 550.60, 550.65, 551.00, 551.20],
+      "Close": [550.75, 550.70, 551.05, 551.25, 551.30],
+      "volume": [1, 1, 1, 1, 1],
+      "final_ba_position": [37, 5, -18, -48, 37],
+    },
+    index=pd.to_datetime(
+      [
+        "2021-01-14 09:14:59.999000+00:00",
+        "2021-01-14 09:15:59.999000+00:00",
+        "2021-01-14 09:16:59.999000+00:00",
+        "2021-01-14 09:17:59.999000+00:00",
+        "2021-01-14 09:18:59.999000+00:00",
+      ]
+    ),
+  )
   df.index.name = "bar_close_timestamp"
-  eq_np, pct_np = perf.compute_backtesting_return(
-    df, initial_cash=10000, commission_rate=0.0005
-  )
-  bt = Backtest(
-    df,
-    PositionStrategy,
-    commission=0.0005,
-    trade_on_close=True,
-    hedging=False,
-    exclusive_orders=False,
-    cash=10000,
-  )
-  stats = bt.run()
+  with ut.expect_no_mutation(df):
+    eq_np, pct_np = perf.compute_backtesting_return(
+      df, initial_cash=10000, commission_rate=0.0005
+    )
+  with ut.expect_no_mutation(df):
+    bt = Backtest(
+      df,
+      PositionStrategy,
+      commission=0.0005,
+      trade_on_close=True,
+      hedging=False,
+      exclusive_orders=False,
+      cash=10000,
+    )
+    stats = bt.run()
   np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
   np.testing.assert_allclose(pct_np, stats["Return [%]"])
