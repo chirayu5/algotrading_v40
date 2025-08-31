@@ -37,19 +37,19 @@ def _prepare_df() -> pd.DataFrame:
   instruments = [
     sid.EquityDesc(symbol="ICICIBANK", market=sid.Market.INDIAN_MARKET),
   ]
-  date_rng = sdr.DateRange(dt.date(2021, 1, 1), dt.date(2021, 4, 10))
+  date_rng = sdr.DateRange(dt.date(2021, 1, 1), dt.date(2021, 10, 10))
   data = dac.get_cleaned_data(instruments, date_rng)
   df_icici = data.get_full_df_for_instrument_desc(
     sid.EquityDesc(symbol="ICICIBANK", market=sid.Market.INDIAN_MARKET)
   )
-  np.random.seed(361159)
+  np.random.seed(75016)
   df_icici["final_ba_position"] = (
     np.random.uniform(-50, 50, len(df_icici)).round().astype(int)
   )
   df_icici = df_icici.rename(
     columns={"open": "Open", "high": "High", "low": "Low", "close": "Close"}
   )
-  df_icici = df_icici.iloc[46:248].copy()
+  df_icici = df_icici.iloc[1590:1630].copy()
   df_icici.loc[df_icici.index[-1], "final_ba_position"] = 0
   return df_icici
 
