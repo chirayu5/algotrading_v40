@@ -30,7 +30,7 @@ def _prepare_df() -> pd.DataFrame:
   instruments = [
     sid.EquityDesc(symbol="ICICIBANK", market=sid.Market.INDIAN_MARKET),
   ]
-  date_rng = sdr.DateRange(dt.date(2021, 1, 1), dt.date(2021, 10, 2))
+  date_rng = sdr.DateRange(dt.date(2021, 1, 1), dt.date(2021, 1, 5))
   data = dac.get_cleaned_data(instruments, date_rng)
   df_icici = data.get_full_df_for_instrument_desc(
     sid.EquityDesc(symbol="ICICIBANK", market=sid.Market.INDIAN_MARKET)
@@ -41,12 +41,35 @@ def _prepare_df() -> pd.DataFrame:
   df_icici = df_icici.rename(
     columns={"open": "Open", "high": "High", "low": "Low", "close": "Close"}
   )
-  start = np.random.randint(0, len(df_icici) - 100)
-  df_icici = df_icici.iloc[start : start + 5].copy()
   return df_icici
 
 
-def test_compute_backtesting_return_matches_backtesting_library():
+def test_compute_backtesting_return_matches_backtesting_library_0():
+  np.random.seed(4)
+  df = _prepare_df()
+  df["volume"] = 1
+  df.index.name = "bar_close_timestamp"
+  assert len(df) == 1125
+  with ut.expect_no_mutation(df):
+    eq_np, pct_np = perf.compute_backtesting_return(
+      df, initial_cash=10000, commission_rate=0.0005
+    )
+  with ut.expect_no_mutation(df):
+    bt = Backtest(
+      df,
+      PositionStrategy,
+      commission=0.0005,
+      trade_on_close=True,
+      hedging=False,
+      exclusive_orders=False,
+      cash=10000,
+    )
+    stats = bt.run()
+  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
+  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+
+
+def test_compute_backtesting_return_matches_backtesting_library_1():
   df = pd.DataFrame(
     {
       "Open": [551.05, 550.90, 550.70, 551.00, 551.30],
