@@ -1,0 +1,28 @@
+{
+  // VS Code debug configuration file
+  "version": "0.2.0",
+  "configurations": [
+    // Debug any individual test you launch from the Test Explorer
+    {
+      "name": "Python: Debug Pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "purpose": [
+        "debug-test"
+      ], // <- tells VS Code this is for tests
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false, // step into site-packages
+      "subProcess": true // follow subprocesses (optional)
+    },
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "subProcess": true
+    }
+  ]
+}
