@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from backtesting import Backtest
+from backtesting.lib import Strategy
 
 
 def equity(p: float, cash: float, trades: list[dict[str, float]]) -> float:
@@ -11,6 +13,9 @@ def margin_used(p: float, trades: list[dict[str, float]]) -> float:  # leverage 
 
 
 def check_trades(trades: list[dict[str, float]]) -> None:
+  """
+  Check all trades are non-zero and have the same sign.
+  """
   for tr in trades:
     if tr["size"] == 0:
       raise ValueError(f"Trade with zero size found: {tr}")
@@ -25,14 +30,16 @@ def compute_backtesting_return(
   df: pd.DataFrame,
   commission_rate,
   initial_cash,
+  error_on_order_rejection: bool,
 ) -> tuple[float, float]:
   close = df["Close"].to_numpy(float)
   target = df["final_ba_position"].to_numpy(int)
-
+  if target[-1] != 0:
+    raise ValueError("Final target position must be 0")
   cash: float = initial_cash
   trades: list[dict[str, float]] = []  # FIFO queue – {'size', 'entry'}
 
-  for i in range(1, len(df) - 1):  # bar executing fills
+  for i in range(0, len(df)):  # bar executing fills
     check_trades(trades)
     px = close[i]
     want = target[i]  # desired position at the end of the bar
@@ -76,10 +83,67 @@ def compute_backtesting_return(
       signed = int(np.sign(delta)) * need
       trades.append({"size": signed, "entry": px})
       cash -= need * px * commission_rate  # entry commission
-    # else: broker silently cancels
+    else:
+      if error_on_order_rejection:
+        raise ValueError(
+          f"Order rejected: index={i}, timestamp={df.index[i]}, cost_total={cost_total}, avail={avail}"
+        )
+      # else: broker silently cancels
     check_trades(trades)
-
+  if trades:
+    raise ValueError("There are still open trades at the end")
   # ------------------- final valuation of open trades -------------------
   equity_final = equity(p=close[-1], cash=cash, trades=trades)
   return_pct = 100 * (equity_final - initial_cash) / initial_cash
   return equity_final, return_pct
+
+
+##########
+
+
+class PositionStrategy(Strategy):
+  def init(self):
+    super().init()
+
+  def next(self):
+    desired = int(self.data.final_ba_position[-1])
+    current = self.position.size
+    delta = desired - current
+    if delta > 0:
+      self.buy(size=delta)
+    elif delta < 0:
+      self.sell(size=-delta)
+
+
+def compute_backtesting_return_reference(
+  df: pd.DataFrame,
+  commission_rate: float,
+  initial_cash: float,
+) -> pd.Series:
+  df = df.copy()
+  if df["final_ba_position"].iloc[-1] != 0:
+    raise ValueError("Final target position must be 0")
+
+  # backtesting library ignores first and last rows
+  # so setting them as dummy rows
+  first_row = df.iloc[0].copy()
+  first_row["final_ba_position"] = 0
+  first_row.name = df.index[0] - pd.Timedelta(minutes=1)
+
+  last_row = df.iloc[-1].copy()
+  last_row["final_ba_position"] = 0
+  last_row.name = df.index[-1] + pd.Timedelta(minutes=1)
+
+  df = pd.concat([pd.DataFrame([first_row]), df, pd.DataFrame([last_row])])
+
+  bt = Backtest(
+    df,
+    PositionStrategy,
+    commission=commission_rate,
+    trade_on_close=True,
+    hedging=False,
+    exclusive_orders=False,
+    finalize_trades=True,
+    cash=initial_cash,
+  )
+  return bt.run()
