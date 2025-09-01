@@ -45,6 +45,14 @@ def compute_backtesting_return(
     want = target[i]  # desired position at the end of the bar
     pos = sum(t["size"] for t in trades)
     delta = want - pos  # change required this bar
+
+    # stop if the account is out of money
+    if equity(p=px, cash=cash, trades=trades) <= 0:
+      # close everything at current price, zero-out cash and stop
+      cash = 0.0
+      trades.clear()
+      break
+
     if delta == 0:
       continue
 
