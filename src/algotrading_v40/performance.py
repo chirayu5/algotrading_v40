@@ -32,7 +32,8 @@ def compute_backtesting_return(
   initial_cash,
   error_on_order_rejection: bool,
 ) -> tuple[float, float]:
-  close = df["Close"].to_numpy(float)
+  close = df["close"].to_numpy(float)
+  margin_check_price = df["margin_check_price"].to_numpy(float)
   target = df["final_ba_position"].to_numpy(int)
   if target[-1] != 0:
     raise ValueError("Final target position must be 0")
@@ -84,8 +85,20 @@ def compute_backtesting_return(
     # affordability criterion:
     cost_total = need * (px + px * commission_rate)
 
+    # NOTE on margin_check_price:
+    # margin_check_price is the price at which the broker checks if it can afford the order
+    # The backtesting library uses the NEXT bar's close price for this.
+    # But the backtesting library uses the CURRENT bar's close as the fill price (with trade_on_close=True).
+    # I don't understanf why they do this. For my use case, I will be using the CURRENT bar's close as
+    # both the margin check price and the fill price.
+    # However, I am making margin_check_price an injectable parameter to have a way to run my code
+    # such that it matches EXACTLY with backtesting library's behavior for testing purposes.
+    # To mimic the backtesting library's behavior, df["margin_check_price"] is set to df["close"].shift(-1).
+
     avail = max(
-      0.0, equity(p=px, cash=cash, trades=trades) - margin_used(p=px, trades=trades)
+      0.0,
+      equity(p=margin_check_price[i], cash=cash, trades=trades)
+      - margin_used(p=margin_check_price[i], trades=trades),
     )  # free equity
     if cost_total <= avail:  # broker accepts order
       signed = int(np.sign(delta)) * need
@@ -129,6 +142,10 @@ def compute_backtesting_return_reference(
   initial_cash: float,
 ) -> pd.Series:
   df = df.copy()
+  df.rename(
+    columns={"close": "Close", "open": "Open", "high": "High", "low": "Low"},
+    inplace=True,
+  )
   if df["final_ba_position"].iloc[-1] != 0:
     raise ValueError("Final target position must be 0")
 
