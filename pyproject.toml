@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "backtesting>=0.6.5",
     "cmake>=4.1.0",
+    "fastparquet>=2024.11.0",
     "ipykernel>=6.30.1",
     "ipywidgets>=8.1.7",
     "jupyter>=1.1.1",
@@ -15,6 +16,7 @@ dependencies = [
     "matplotlib>=3.10.6",
     "numpy>=2.3.2",
     "pandas>=2.3.2",
+    "pyarrow>=21.0.0",
     "pybind11>=3.0.1",
     "pytest>=8.4.2",
     "pytest-cov>=6.2.1",
@@ -123,3 +125,11 @@ docstring-code-line-length = "dynamic"
 [tool.pytest.ini_options]
 # Disable output capturing to show print statements in pytest unit tests
 addopts = "-s"
+
+[tool.uv.sources]
+algotrading-v40 = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "algotrading-v40",
+]

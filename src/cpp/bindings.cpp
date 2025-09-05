@@ -1,6 +1,10 @@
 #include <pybind11/pybind11.h>
 
 // Forward declarations of the helpers implemented
+
+// data selectors
+void register_cusum(pybind11::module_ &);
+
 // feature calculators
 void register_rsi(pybind11::module_ &);
 void register_detrended_rsi(pybind11::module_ &);
@@ -20,6 +24,10 @@ void register_features(pybind11::module_ &);
 
 PYBIND11_MODULE(algotrading_v40_cpp, m) {
   m.doc() = "algotrading_v40 consolidated C++ extension";
+
+  // submodule: data selectors
+  auto ds = m.def_submodule("data_selectors", "data selectors");
+  register_cusum(ds);
 
   // submodule: feature calculators
   auto fc = m.def_submodule("feature_calculators", "feature calculators");
