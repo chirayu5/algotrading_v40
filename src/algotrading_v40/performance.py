@@ -1,3 +1,5 @@
+import dataclasses
+
 import numpy as np
 import pandas as pd
 from backtesting import Backtest
@@ -26,19 +28,40 @@ def check_trades(trades: list[dict[str, float]]) -> None:
         raise ValueError(f"Trades have mixed signs: {trades}")
 
 
-def compute_backtesting_return(
+@dataclasses.dataclass(frozen=True)
+class BacktestResult:
+  equity_final: float
+  return_pct: float
+  equity_curve: pd.Series
+
+
+def backtest(
   df: pd.DataFrame,
   commission_rate,
   initial_cash,
   error_on_order_rejection: bool,
-) -> tuple[float, float]:
+) -> BacktestResult:
+  # NOTE on valuation_price:
+  # valuation_price is the price at which the broker checks if -
+  # - we can afford the order (i.e. used in affordability criterion)
+  # - our account equity is non-negative (i.e. used to check if we can continue trading)
+  # - marks our position to market at the end of the bar (equity is computed using it)
+  # The backtesting library uses the NEXT bar's close price for this.
+  # But the backtesting library uses the CURRENT bar's close as the fill price (with trade_on_close=True).
+  # **I don't understand why they do this**. For my use case, I will be using the CURRENT bar's close as
+  # both the valuation_price and the fill price.
+  # However, I am making valuation_price an injectable parameter to have a way to run my code
+  # such that it matches EXACTLY with backtesting library's behavior for testing purposes.
+  # To mimic the backtesting library's behavior, df["valuation_price"] is set to df["close"].shift(-1).
+
   close = df["close"].to_numpy(float)
-  margin_check_price = df["margin_check_price"].to_numpy(float)
+  valuation_price = df["valuation_price"].to_numpy(float)
   target = df["final_ba_position"].to_numpy(int)
   if target[-1] != 0:
     raise ValueError("Final target position must be 0")
   cash: float = initial_cash
   trades: list[dict[str, float]] = []  # FIFO queue – {'size', 'entry'}
+  equity_curve: list[float] = []
 
   for i in range(0, len(df)):  # bar executing fills
     check_trades(trades)
@@ -47,14 +70,8 @@ def compute_backtesting_return(
     pos = sum(t["size"] for t in trades)
     delta = want - pos  # change required this bar
 
-    # stop if the account is out of money
-    if equity(p=px, cash=cash, trades=trades) <= 0:
-      # close everything at current price, zero-out cash and stop
-      cash = 0.0
-      trades.clear()
-      break
-
     if delta == 0:
+      equity_curve.append(equity(p=valuation_price[i], cash=cash, trades=trades))
       continue
 
     # --------------------------------------------------------------
@@ -68,6 +85,8 @@ def compute_backtesting_return(
       qty = np.sign(tr["size"]) * min(abs(tr["size"]), abs(delta))
       cash += qty * (px - tr["entry"])  # realised P/L
       cash -= abs(qty) * px * commission_rate  # exit commission
+      if cash <= 0:
+        raise ValueError("Cash is less than or equal to 0 should not happen")
       tr["size"] -= qty
       delta += qty  # smaller (or 0)
       if tr["size"] == 0:
@@ -76,6 +95,7 @@ def compute_backtesting_return(
     trades = trades[j:]  # only keep trades with size not 0
     check_trades(trades)
     if delta == 0:
+      equity_curve.append(equity(p=valuation_price[i], cash=cash, trades=trades))
       continue
     # --------------------------------------------------------------
     # 2) Open *if and only if* broker can afford the whole remainder
@@ -85,20 +105,10 @@ def compute_backtesting_return(
     # affordability criterion:
     cost_total = need * (px + px * commission_rate)
 
-    # NOTE on margin_check_price:
-    # margin_check_price is the price at which the broker checks if it can afford the order
-    # The backtesting library uses the NEXT bar's close price for this.
-    # But the backtesting library uses the CURRENT bar's close as the fill price (with trade_on_close=True).
-    # I don't understanf why they do this. For my use case, I will be using the CURRENT bar's close as
-    # both the margin check price and the fill price.
-    # However, I am making margin_check_price an injectable parameter to have a way to run my code
-    # such that it matches EXACTLY with backtesting library's behavior for testing purposes.
-    # To mimic the backtesting library's behavior, df["margin_check_price"] is set to df["close"].shift(-1).
-
     avail = max(
       0.0,
-      equity(p=margin_check_price[i], cash=cash, trades=trades)
-      - margin_used(p=margin_check_price[i], trades=trades),
+      equity(p=valuation_price[i], cash=cash, trades=trades)
+      - margin_used(p=valuation_price[i], trades=trades),
     )  # free equity
     if cost_total <= avail:  # broker accepts order
       signed = int(np.sign(delta)) * need
@@ -111,12 +121,27 @@ def compute_backtesting_return(
         )
       # else: broker silently cancels
     check_trades(trades)
+
+    if equity(p=valuation_price[i], cash=cash, trades=trades) <= 0:
+      # close everything at current price, zero-out cash and stop
+      cash = 0.0
+      trades.clear()
+      for _ in range(len(df) - i):
+        equity_curve.append(0)
+      break
+
+    equity_curve.append(equity(p=valuation_price[i], cash=cash, trades=trades))
+
   if trades:
     raise ValueError("There are still open trades at the end")
-  # ------------------- final valuation of open trades -------------------
+
   equity_final = equity(p=close[-1], cash=cash, trades=trades)
   return_pct = 100 * (equity_final - initial_cash) / initial_cash
-  return equity_final, return_pct
+  return BacktestResult(
+    equity_final=equity_final,
+    return_pct=return_pct,
+    equity_curve=pd.Series(equity_curve, index=df.index, name="equity"),
+  )
 
 
 ##########
@@ -136,7 +161,7 @@ class PositionStrategy(Strategy):
       self.sell(size=-delta)
 
 
-def compute_backtesting_return_reference(
+def backtest_reference(
   df: pd.DataFrame,
   commission_rate: float,
   initial_cash: float,

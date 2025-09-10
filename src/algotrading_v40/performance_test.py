@@ -7,6 +7,39 @@ import algotrading_v40.performance as perf
 import algotrading_v40.utils.testing as ut
 
 
+def _check_against_reference(
+  backtest_result: perf.BacktestResult, expected_stats: dict, input_df: pd.DataFrame
+):
+  np.testing.assert_allclose(
+    backtest_result.equity_final, expected_stats["Equity Final [$]"]
+  )
+  np.testing.assert_allclose(backtest_result.return_pct, expected_stats["Return [%]"])
+
+  equity_curve = backtest_result.equity_curve
+
+  expected_equity_curve = (
+    expected_stats["_equity_curve"]["Equity"].shift(-1).rename("equity").iloc[1:-1]
+  )
+  expected_equity_curve.index.name = "bar_close_timestamp"
+
+  np.testing.assert_allclose(backtest_result.equity_final, equity_curve.iloc[-1])
+
+  pd.testing.assert_index_equal(
+    equity_curve.index,
+    expected_equity_curve.index,
+  )
+
+  pd.testing.assert_index_equal(
+    backtest_result.equity_curve.index,
+    input_df.index,
+  )
+
+  pd.testing.assert_series_equal(
+    equity_curve,
+    expected_equity_curve,
+  )
+
+
 def test_random_case_matches_reference_with_order_rejection_true():
   # a large random test case with error_on_order_rejection=True that passes
   # ensures future fixes don't break existing functionality
@@ -14,7 +47,7 @@ def test_random_case_matches_reference_with_order_rejection_true():
   df = ut.get_test_df(
     start_date=dt.datetime(2021, 1, 14), end_date=dt.datetime(2021, 3, 14)
   )
-  df["margin_check_price"] = df["close"].shift(-1)
+  df["valuation_price"] = df["close"].shift(-1)
   df["final_ba_position"] = np.random.uniform(-10, 10, len(df)).round().astype(int)
   df["volume"] = 1
   df.loc[df.index[-1], "final_ba_position"] = 0
@@ -24,22 +57,23 @@ def test_random_case_matches_reference_with_order_rejection_true():
   commission = 0.0005
 
   with ut.expect_no_mutation(df):
-    eq_np, pct_np = perf.compute_backtesting_return(
+    backtest_result = perf.backtest(
       df,
       initial_cash=initial_cash,
       commission_rate=commission,
       error_on_order_rejection=True,
     )
   with ut.expect_no_mutation(df):
-    stats = perf.compute_backtesting_return_reference(
+    stats = perf.backtest_reference(
       df, initial_cash=initial_cash, commission_rate=commission
     )
-  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
-  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+  _check_against_reference(
+    backtest_result=backtest_result, expected_stats=stats, input_df=df
+  )
 
 
 def test_affordability_uses_margin_check_price():
-  # tests that affordability criterion uses margin_check_price and not close price
+  # tests that affordability criterion uses valuation_price and not close price
   df = pd.DataFrame(
     {
       "open": [
@@ -74,27 +108,25 @@ def test_affordability_uses_margin_check_price():
     ),
   )
   df.index.name = "bar_close_timestamp"
-  df["margin_check_price"] = df["close"].shift(-1)
+  df["valuation_price"] = df["close"].shift(-1)
 
   initial_cash = 1e5
   commission = 0.0005
 
   with ut.expect_no_mutation(df):
-    eq_np, pct_np = perf.compute_backtesting_return(
+    backtest_result = perf.backtest(
       df,
       initial_cash=initial_cash,
       commission_rate=commission,
       error_on_order_rejection=False,
     )
   with ut.expect_no_mutation(df):
-    stats = perf.compute_backtesting_return_reference(
+    stats = perf.backtest_reference(
       df, initial_cash=initial_cash, commission_rate=commission
     )
-  print("stats: ", stats)
-  print("eq_np: ", eq_np)
-  print("pct_np: ", pct_np)
-  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
-  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+  _check_against_reference(
+    backtest_result=backtest_result, expected_stats=stats, input_df=df
+  )
 
 
 def test_unaffordable_trades_do_not_open():
@@ -119,27 +151,25 @@ def test_unaffordable_trades_do_not_open():
     ),
   )
   df.index.name = "bar_close_timestamp"
-  df["margin_check_price"] = df["close"].shift(-1)
+  df["valuation_price"] = df["close"].shift(-1)
 
   initial_cash = 1e4
   commission = 0.0005
 
   with ut.expect_no_mutation(df):
-    eq_np, pct_np = perf.compute_backtesting_return(
+    backtest_result = perf.backtest(
       df,
       initial_cash=initial_cash,
       commission_rate=commission,
       error_on_order_rejection=False,
     )
   with ut.expect_no_mutation(df):
-    stats = perf.compute_backtesting_return_reference(
+    stats = perf.backtest_reference(
       df, initial_cash=initial_cash, commission_rate=commission
     )
-  print("stats: ", stats)
-  print("eq_np: ", eq_np)
-  print("pct_np: ", pct_np)
-  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
-  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+  _check_against_reference(
+    backtest_result=backtest_result, expected_stats=stats, input_df=df
+  )
 
 
 def test_trading_stops_when_account_out_of_cash():
@@ -213,23 +243,24 @@ def test_trading_stops_when_account_out_of_cash():
     ),
   )
   df.index.name = "bar_close_timestamp"
-  df["margin_check_price"] = df["close"].shift(-1)
+  df["valuation_price"] = df["close"].shift(-1)
   initial_cash = 1e5
   commission = 0.0005
 
   with ut.expect_no_mutation(df):
-    eq_np, pct_np = perf.compute_backtesting_return(
+    backtest_result = perf.backtest(
       df,
       initial_cash=initial_cash,
       commission_rate=commission,
       error_on_order_rejection=False,
     )
   with ut.expect_no_mutation(df):
-    stats = perf.compute_backtesting_return_reference(
+    stats = perf.backtest_reference(
       df, initial_cash=initial_cash, commission_rate=commission
     )
-  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
-  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+  _check_against_reference(
+    backtest_result=backtest_result, expected_stats=stats, input_df=df
+  )
 
 
 def test_random_case_order_rejection_false_matches_reference():
@@ -237,27 +268,28 @@ def test_random_case_order_rejection_false_matches_reference():
   # with error_on_order_rejection=False, the code not error and match backtesting library's result
   # np.random.seed(4)
   df = ut.get_test_df(
-    start_date=dt.datetime(2021, 1, 14), end_date=dt.datetime(2021, 3, 14)
+    start_date=dt.datetime(2021, 1, 14), end_date=dt.datetime(2021, 12, 14)
   )
-  df["margin_check_price"] = df["close"].shift(-1)
+  df["valuation_price"] = df["close"].shift(-1)
   df["final_ba_position"] = np.random.uniform(-100, 100, len(df)).round().astype(int)
   df["volume"] = 1
   df.loc[df.index[-1], "final_ba_position"] = 0
   df.index.name = "bar_close_timestamp"
 
-  initial_cash = 1e5
+  initial_cash = 1e3
   commission = 0.0005
 
   with ut.expect_no_mutation(df):
-    eq_np, pct_np = perf.compute_backtesting_return(
+    backtest_result = perf.backtest(
       df,
       initial_cash=initial_cash,
       commission_rate=commission,
       error_on_order_rejection=False,
     )
   with ut.expect_no_mutation(df):
-    stats = perf.compute_backtesting_return_reference(
+    stats = perf.backtest_reference(
       df, initial_cash=initial_cash, commission_rate=commission
     )
-  np.testing.assert_allclose(eq_np, stats["Equity Final [$]"])
-  np.testing.assert_allclose(pct_np, stats["Return [%]"])
+  _check_against_reference(
+    backtest_result=backtest_result, expected_stats=stats, input_df=df
+  )
