@@ -7,7 +7,6 @@ import pytest
 
 import algotrading_v40.structures.date_range as sdr
 import algotrading_v40.utils.df as udf
-import algotrading_v40.utils.features as uf
 import algotrading_v40.utils.testing as ut
 
 
@@ -955,9 +954,7 @@ class TestCalculateGroupedValues:
       start_date=dt.date(2021, 1, 1),
       end_date=dt.date(2021, 1, 2),
     )
-    df["bar_group"] = uf.get_time_based_bar_group_for_indian_market(
-      df, group_size_minutes=1
-    )
+    df["bar_group"] = df.index.to_series().rename("bar_group")
 
     def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
       return 2 * df_

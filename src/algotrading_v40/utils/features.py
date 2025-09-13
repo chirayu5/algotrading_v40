@@ -1,6 +1,3 @@
-import datetime as dt
-
-import numpy as np
 import pandas as pd
 
 import algotrading_v40.constants as ac
@@ -84,42 +81,3 @@ def get_indian_market_session_info(
   # Monday=0, Sunday=6
   df["weekday"] = df.index.weekday
   return df
-
-
-######## BAR GROUPING CALCULATION #########
-
-
-def get_time_based_bar_group_for_indian_market(
-  df: pd.DataFrame, group_size_minutes: int
-) -> pd.Series:
-  # using a random date as it does not matter
-  if not 1 <= group_size_minutes <= 375:
-    raise ValueError(
-      f"group_size_minutes must be between 1 and 375 (inclusive). "
-      f"Got {group_size_minutes}"
-    )
-
-  # PRECOMPUTATION; does not depend on the input dataframe df
-  reference = pd.date_range(
-    start=dt.datetime.combine(
-      dt.date(1990, 1, 1), ac.INDIAN_MARKET_FIRST_MINUTE_BAR_CLOSE_TIMESTAMP_UTC
-    ),
-    periods=375,
-    freq="1min",
-  ).time
-  ref2 = group_size_minutes * (np.arange(0, 375) // group_size_minutes)
-  if (ref2 == ref2[-1]).sum() < (group_size_minutes / 2):
-    # if the last group is less than half of the group size,
-    # then set the last group to the second last group
-    # this is to ensure that the last group is at least half of the group size
-    ref2[ref2 == ref2[-1]] = ref2[-1] - group_size_minutes
-  time_to_grouped_time = {t: reference[ref2[i]] for i, t in enumerate(reference)}
-  # END PRECOMPUTATION
-
-  bar_group = df.index.map(
-    lambda x: dt.datetime.combine(x.date(), time_to_grouped_time[x.time()])
-  )
-  return pd.Series(bar_group, index=df.index)
-
-
-#########################################
