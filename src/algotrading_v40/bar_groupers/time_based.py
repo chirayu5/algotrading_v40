@@ -14,53 +14,53 @@ class GroupInfoForIndianMarketResult:
 
 def group_info_for_indian_market(
   ts: pd.Timestamp,
-  group_size: int,
-  offset: int,
+  group_size_minutes: int,
+  offset_minutes: int,
   prev_date: dt.date,
 ):
   """
   Given a timestamp, identify the group it belongs to.
   Return the first ideal timestamp and duration of the group.
   """
-  if group_size <= 0 or group_size > 375:
+  if group_size_minutes <= 0 or group_size_minutes > 375:
     raise ValueError(
-      f"group_size must be between 1 and 375 (inclusive). Got {group_size}"
+      f"group_size_minutes must be between 1 and 375 (inclusive). Got {group_size_minutes}"
     )
 
-  remainder = 375 % group_size
+  remainder = 375 % group_size_minutes
   if remainder == 0:
-    n_groups = 375 // group_size
-    last_group_size = group_size
+    n_groups = 375 // group_size_minutes
+    last_group_size = group_size_minutes
   else:
-    if remainder < (group_size / 2):
-      n_groups = 375 // group_size
-      last_group_size = group_size + remainder
+    if remainder < (group_size_minutes / 2):
+      n_groups = 375 // group_size_minutes
+      last_group_size = group_size_minutes + remainder
     else:
-      n_groups = (375 // group_size) + 1
+      n_groups = (375 // group_size_minutes) + 1
       last_group_size = remainder
 
-  if offset < 0 or offset >= last_group_size:
+  if offset_minutes < 0 or offset_minutes >= last_group_size:
     raise ValueError(
-      f"offset must be between 0 and {last_group_size - 1} (inclusive). Got {offset}"
+      f"offset_minutes must be between 0 and {last_group_size - 1} (inclusive). Got {offset_minutes}"
     )
 
   if (prev_date is not None) and (prev_date >= ts.date()):
     raise ValueError("prev_date must be strictly before ts.date()")
 
   # G G G ... G L
-  # (n_groups-1) G of size group_size
+  # (n_groups-1) G of size group_size_minutes
   # last group L of size last_group_size
 
-  # first minute bar close timestamp after applying the offset for the trading day
+  # first minute bar close timestamp after applying the offset_minutes for the trading day
   fts: pd.Timestamp = pd.Timestamp.combine(
     ts.date(), ctnts.INDIAN_MARKET_FIRST_MINUTE_BAR_CLOSE_TIMESTAMP_UTC
-  ).tz_localize("UTC") + pd.Timedelta(minutes=offset)
+  ).tz_localize("UTC") + pd.Timedelta(minutes=offset_minutes)
 
   elapsed: int = (ts - fts).total_seconds() // 60
 
   if elapsed < 0:
     # belongs to the previous day's last group
-    # prev fts: previous day's first minute bar close timestamp after applying the offset
+    # prev fts: previous day's first minute bar close timestamp after applying the offset_minutes
     if prev_date is None:
       return GroupInfoForIndianMarketResult(
         first_ideal_ts=None,
@@ -68,28 +68,30 @@ def group_info_for_indian_market(
       )
     prev_fts: pd.Timestamp = pd.Timestamp.combine(
       prev_date, ctnts.INDIAN_MARKET_FIRST_MINUTE_BAR_CLOSE_TIMESTAMP_UTC
-    ).tz_localize("UTC") + pd.Timedelta(minutes=offset)
+    ).tz_localize("UTC") + pd.Timedelta(minutes=offset_minutes)
     return GroupInfoForIndianMarketResult(
-      first_ideal_ts=prev_fts + pd.Timedelta(minutes=(n_groups - 1) * group_size),
+      first_ideal_ts=prev_fts
+      + pd.Timedelta(minutes=(n_groups - 1) * group_size_minutes),
       duration=last_group_size,
     )
 
-  if elapsed < group_size * (n_groups - 1):
+  if elapsed < group_size_minutes * (n_groups - 1):
     return GroupInfoForIndianMarketResult(
-      first_ideal_ts=fts + pd.Timedelta(minutes=(elapsed // group_size) * group_size),
-      duration=group_size,
+      first_ideal_ts=fts
+      + pd.Timedelta(minutes=(elapsed // group_size_minutes) * group_size_minutes),
+      duration=group_size_minutes,
     )
   else:
     return GroupInfoForIndianMarketResult(
-      first_ideal_ts=fts + pd.Timedelta(minutes=(n_groups - 1) * group_size),
+      first_ideal_ts=fts + pd.Timedelta(minutes=(n_groups - 1) * group_size_minutes),
       duration=last_group_size,
     )
 
 
 def get_time_based_bar_group_for_indian_market(
   df: pd.DataFrame,
-  group_size: int,
-  offset: int,
+  group_size_minutes: int,
+  offset_minutes: int,
 ) -> pd.Series:
   """
   Get the time-based bar group for the Indian market.
@@ -99,17 +101,32 @@ def get_time_based_bar_group_for_indian_market(
   - last minute bar close time is: 09:59:59.999000+00:00
   (375 minutes in total)
 
+  The `offset_minutes` parameter is used to shift the bar group by a certain number of minutes.
 
-  The `offset` parameter is used to shift the bar group by a certain number of minutes.
+  Example without offset:
+    If one trading day is:
+    0 1 2 3 4 5 6 7 8 ... 371 372 373 374
+    with group_size_minutes=4 and offset_minutes=0,
+    then the bar groups are:
+    0 0 0 0 | 4 4 4 4 | 8 ... 368 | 372 372 372 (last group has 3 bars since 375 % 4 = 3)
+
+  Example with offset:
+    If one trading day is:
+    0 1 2 3 4 5 6 7 8 ... 371 372 373 374
+    with group_size_minutes=4 and offset_minutes=1,
+    then the bar groups are:
+    pd373:(0) | 1:(1 2 3 4) | 5:(5 6 7 8) ... 369:(369 370 371 372) | 373:(373 374 |||| nd0) | nd1:(nd1 nd2 nd3 nd4)
+    (pd: previous day, nd: next day)
+    (last group will have one bar from the next day since offset_minutes is 1)
 
   Args:
     df: DataFrame with index as bar_close_timestamp (UTC timezone)
-    offset: offset in minutes from the start of the day
-    group_size: size of the bar group in minutes
+    offset_minutes: offset_minutes in minutes from the start of the day
+    group_size_minutes: size of the bar group in minutes
   """
-  if group_size <= 0 or group_size > 375:
+  if group_size_minutes <= 0 or group_size_minutes > 375:
     raise ValueError(
-      f"group_size must be between 1 and 375 (inclusive). Got {group_size}"
+      f"group_size_minutes must be between 1 and 375 (inclusive). Got {group_size_minutes}"
     )
 
   if (not df.index.is_unique) or (not df.index.is_monotonic_increasing):
@@ -125,8 +142,8 @@ def get_time_based_bar_group_for_indian_market(
   prev_date = curr_date - dt.timedelta(days=1)
   gi = group_info_for_indian_market(
     ts=df.index[0],
-    group_size=group_size,
-    offset=offset,
+    group_size_minutes=group_size_minutes,
+    offset_minutes=offset_minutes,
     prev_date=prev_date,
   )
   cgfits = gi.first_ideal_ts
@@ -178,8 +195,8 @@ def get_time_based_bar_group_for_indian_market(
       bg[i] = curr_ts
       gi = group_info_for_indian_market(
         ts=curr_ts,
-        group_size=group_size,
-        offset=offset,
+        group_size_minutes=group_size_minutes,
+        offset_minutes=offset_minutes,
         prev_date=prev_date,
       )
       cgfits = gi.first_ideal_ts

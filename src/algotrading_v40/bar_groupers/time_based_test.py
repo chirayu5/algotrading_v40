@@ -29,22 +29,22 @@ def _market_ts(minutes_after_open: int, day: dt.date = CURR_DAY) -> pd.Timestamp
 
 class TestGroupInfoForIndianMarket:
   @pytest.mark.parametrize(
-    "group_size, minutes_after_open, expected_first_ideal, expected_duration",
+    "group_size_minutes, minutes_after_open, expected_first_ideal, expected_duration",
     [
-      # 1) group_size divides 375 exactly - straight-forward case
+      # 1) group_size_minutes divides 375 exactly - straight-forward case
       (
-        15,  # group_size
+        15,  # group_size_minutes
         5,  # ts is 5 minutes after open => inside 1st group
         _market_ts(15 * 0),  # first ideal ts of that group
-        15,  # duration = group_size
+        15,  # duration = group_size_minutes
       ),
       (
-        15,  # group_size
+        15,  # group_size_minutes
         372,  # place in the last group
         _market_ts(15 * 24),
         15,
       ),
-      # 2) remainder < group_size / 2 => last group will be bigger
+      # 2) remainder < group_size_minutes / 2 => last group will be bigger
       (
         60,  # 375 % 60 == 15 (< 30) => last_group_size = 75
         123,  # 2 hours 3 min after open => inside a regular group
@@ -63,7 +63,7 @@ class TestGroupInfoForIndianMarket:
         _market_ts(60 * 5),
         75,
       ),
-      # 3) remainder >= group_size/2 => an extra (smaller) last group appears
+      # 3) remainder >= group_size_minutes/2 => an extra (smaller) last group appears
       (
         100,  # 375 % 100 == 75 (>= 50) => extra last group, size 75
         250,  # inside the 3rd "100-minute" group
@@ -86,7 +86,7 @@ class TestGroupInfoForIndianMarket:
   )
   def test_without_offset(
     self,
-    group_size,
+    group_size_minutes,
     minutes_after_open,
     expected_first_ideal,
     expected_duration,
@@ -94,8 +94,8 @@ class TestGroupInfoForIndianMarket:
     ts = _market_ts(minutes_after_open)
     res = bg_tb.group_info_for_indian_market(
       ts=ts,
-      group_size=group_size,
-      offset=0,
+      group_size_minutes=group_size_minutes,
+      offset_minutes=0,
       prev_date=None,
     )
     assert res.duration == expected_duration
@@ -105,27 +105,27 @@ class TestGroupInfoForIndianMarket:
     )
 
   @pytest.mark.parametrize(
-    "offset, group_size, minutes_after_open, expected_first_ideal_ts, expected_duration, prev_date",
+    "offset_minutes, group_size_minutes, minutes_after_open, expected_first_ideal_ts, expected_duration, prev_date",
     [
       (
-        3,  # offset
-        15,  # group_size
-        17,  # timestamp is 17 min after open => 14 min into offset session => first group
-        _market_ts(3),  # first ideal should be at offset (3 min after open)
-        15,  # duration = group_size
+        3,  # offset_minutes
+        15,  # group_size_minutes
+        17,  # timestamp is 17 min after open => 14 min into offset_minutes session => first group
+        _market_ts(3),  # first ideal should be at offset_minutes (3 min after open)
+        15,  # duration = group_size_minutes
         None,
       ),
       (
-        3,  # offset
-        15,  # group_size
-        18,  # timestamp is 18 min after open => 15 min into offset session (so after the first group's 0-14) => second group
-        _market_ts(18),  # second group after offset
-        15,  # duration = group_size
+        3,  # offset_minutes
+        15,  # group_size_minutes
+        18,  # timestamp is 18 min after open => 15 min into offset_minutes session (so after the first group's 0-14) => second group
+        _market_ts(18),  # second group after offset_minutes
+        15,  # duration = group_size_minutes
         None,
       ),
       (
-        3,  # offset
-        15,  # group_size
+        3,  # offset_minutes
+        15,  # group_size_minutes
         2,  # belongs to the previous day's last group
         pd.Timestamp.combine(
           PREV_DAY,
@@ -137,8 +137,8 @@ class TestGroupInfoForIndianMarket:
       ),
       # 0-59 60-119 120-179 180-239 240-299 300-374
       (
-        7,  # offset
-        60,  # group_size
+        7,  # offset_minutes
+        60,  # group_size_minutes
         6,  # belongs to the previous day's last group
         pd.Timestamp.combine(
           PREV_DAY,
@@ -150,8 +150,8 @@ class TestGroupInfoForIndianMarket:
       ),
       # 0-99 100-199 200-299 300-374
       (
-        11,  # offset
-        100,  # group_size
+        11,  # offset_minutes
+        100,  # group_size_minutes
         7,  # belongs to the previous day's last group
         pd.Timestamp.combine(
           PREV_DAY,
@@ -162,8 +162,8 @@ class TestGroupInfoForIndianMarket:
         PREV_DAY,
       ),
       (
-        11,  # offset
-        100,  # group_size
+        11,  # offset_minutes
+        100,  # group_size_minutes
         7,  # belongs to the previous day's last group
         None,
         None,
@@ -173,8 +173,8 @@ class TestGroupInfoForIndianMarket:
   )
   def test_with_offset(
     self,
-    offset,
-    group_size,
+    offset_minutes,
+    group_size_minutes,
     minutes_after_open,
     expected_first_ideal_ts,
     expected_duration,
@@ -183,36 +183,40 @@ class TestGroupInfoForIndianMarket:
     ts = _market_ts(minutes_after_open)
     res = bg_tb.group_info_for_indian_market(
       ts=ts,
-      group_size=group_size,
-      offset=offset,
+      group_size_minutes=group_size_minutes,
+      offset_minutes=offset_minutes,
       prev_date=prev_date,
     )
     assert res.duration == expected_duration
     assert res.first_ideal_ts == expected_first_ideal_ts
 
   def test_offset_validation(self):
-    """Test that offset validation works correctly."""
+    """Test that offset_minutes validation works correctly."""
     ts = _market_ts(10)
 
-    # Test with offset that's too large for the last group
-    # For group_size=60: 375 % 60 = 15 < 30, so last_group_size = 75
-    # Valid offset range should be 0 to 74
-    with pytest.raises(ValueError, match="offset must be between 0 and 74"):
-      bg_tb.group_info_for_indian_market(ts, group_size=60, offset=75, prev_date=None)
+    # Test with offset_minutes that's too large for the last group
+    # For group_size_minutes=60: 375 % 60 = 15 < 30, so last_group_size = 75
+    # Valid offset_minutes range should be 0 to 74
+    with pytest.raises(ValueError, match="offset_minutes must be between 0 and 74"):
+      bg_tb.group_info_for_indian_market(
+        ts, group_size_minutes=60, offset_minutes=75, prev_date=None
+      )
 
-    # Test with negative offset
-    with pytest.raises(ValueError, match="offset must be between 0 and"):
-      bg_tb.group_info_for_indian_market(ts, group_size=60, offset=-1, prev_date=None)
+    # Test with negative offset_minutes
+    with pytest.raises(ValueError, match="offset_minutes must be between 0 and"):
+      bg_tb.group_info_for_indian_market(
+        ts, group_size_minutes=60, offset_minutes=-1, prev_date=None
+      )
 
   def test_group_size_must_be_within_bounds(self):
     ts = _market_ts(0)
     with pytest.raises(ValueError):
       bg_tb.group_info_for_indian_market(
-        ts, group_size=0, offset=0, prev_date=None
+        ts, group_size_minutes=0, offset_minutes=0, prev_date=None
       )  # <= 0
     with pytest.raises(ValueError):
       bg_tb.group_info_for_indian_market(
-        ts, group_size=376, offset=0, prev_date=None
+        ts, group_size_minutes=376, offset_minutes=0, prev_date=None
       )  # > 375
 
 
@@ -234,7 +238,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0-12, 13-25, 26-38,...
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=13, offset=0
+      df, group_size_minutes=13, offset_minutes=0
     )
 
     expected_groups = [
@@ -271,7 +275,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0-14, 15-29, 30-44, 45-59
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=15, offset=0
+      df, group_size_minutes=15, offset_minutes=0
     )
 
     expected_groups = [
@@ -288,7 +292,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     assert result.tolist() == expected_groups
 
   def test_remainder_smaller_case(self):
-    """Test with group_size=60 where remainder < group_size/2 (last group gets bigger)."""
+    """Test with group_size_minutes=60 where remainder < group_size_minutes/2 (last group gets bigger)."""
     timestamps = [
       _market_ts(0, CURR_DAY),
       _market_ts(30, CURR_DAY),
@@ -309,7 +313,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0-59, 60-119, 120-179, 180-239, 240-299, 300-374 (300-359 & 360-374 get merged)
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=60, offset=0
+      df, group_size_minutes=60, offset_minutes=0
     )
 
     expected_groups = [
@@ -329,7 +333,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     assert result.tolist() == expected_groups
 
   def test_remainder_larger_case(self):
-    """Test with group_size=100 where remainder >= group_size/2 (extra last group appears)."""
+    """Test with group_size_minutes=100 where remainder >= group_size_minutes/2 (extra last group appears)."""
     timestamps = [
       _market_ts(0, CURR_DAY),
       _market_ts(99, CURR_DAY),
@@ -346,7 +350,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0-99, 100-199, 200-299, 300-374
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=100, offset=0
+      df, group_size_minutes=100, offset_minutes=0
     )
 
     expected_groups = [
@@ -362,7 +366,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     assert result.tolist() == expected_groups
 
   def test_single_large_group(self):
-    """Test with group_size=375 (single group for entire session)."""
+    """Test with group_size_minutes=375 (single group for entire session)."""
     timestamps = [
       _market_ts(0, CURR_DAY),
       _market_ts(135, CURR_DAY),
@@ -378,7 +382,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
 
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=375, offset=0
+      df, group_size_minutes=375, offset_minutes=0
     )
 
     # All bars should belong to the same group (first timestamp)
@@ -404,7 +408,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0-29, 30-59, 60-89, 90-119, 120-149, 150-179,...
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=30, offset=0
+      df, group_size_minutes=30, offset_minutes=0
     )
 
     expected_groups = [
@@ -426,7 +430,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
 
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=15, offset=0
+      df, group_size_minutes=15, offset_minutes=0
     )
 
     assert result.tolist() == [timestamps[0]]
@@ -448,7 +452,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0,1,2 3-17, 18-32, ...
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=15, offset=3
+      df, group_size_minutes=15, offset_minutes=3
     )
 
     expected_groups = [
@@ -477,7 +481,7 @@ class TestGetTimeBasedBarGroupForIndianMarket:
     )
     # 0,1,2,3,4 5-104, 105-204, 205-304, 305-374
     result = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size=100, offset=5
+      df, group_size_minutes=100, offset_minutes=5
     )
 
     expected_groups = [
@@ -504,29 +508,43 @@ class TestGetTimeBasedBarGroupForIndianMarket:
       df,
       lambda df_: bg_tb.get_time_based_bar_group_for_indian_market(
         df_,
-        group_size=47,
-        offset=11,
+        group_size_minutes=47,
+        offset_minutes=11,
       ),
     )
     assert result.dfs_match
 
   def test_invalid_inputs(self):
-    """Test error handling for invalid group_size."""
+    """Test error handling for invalid group_size_minutes."""
     timestamps = [pd.Timestamp("2023-01-02 03:45:59.999000+00:00")]
     df = pd.DataFrame(
       {"price": [100]}, index=pd.DatetimeIndex(timestamps, name="bar_close_timestamp")
     )
 
-    # Test group_size <= 0
-    with pytest.raises(ValueError, match="group_size must be between 1 and 375"):
-      bg_tb.get_time_based_bar_group_for_indian_market(df, group_size=0, offset=0)
+    # Test group_size_minutes <= 0
+    with pytest.raises(
+      ValueError, match="group_size_minutes must be between 1 and 375"
+    ):
+      bg_tb.get_time_based_bar_group_for_indian_market(
+        df, group_size_minutes=0, offset_minutes=0
+      )
 
-    with pytest.raises(ValueError, match="group_size must be between 1 and 375"):
-      bg_tb.get_time_based_bar_group_for_indian_market(df, group_size=-1, offset=0)
+    with pytest.raises(
+      ValueError, match="group_size_minutes must be between 1 and 375"
+    ):
+      bg_tb.get_time_based_bar_group_for_indian_market(
+        df, group_size_minutes=-1, offset_minutes=0
+      )
 
-    # Test group_size > 375
-    with pytest.raises(ValueError, match="group_size must be between 1 and 375"):
-      bg_tb.get_time_based_bar_group_for_indian_market(df, group_size=376, offset=0)
+    # Test group_size_minutes > 375
+    with pytest.raises(
+      ValueError, match="group_size_minutes must be between 1 and 375"
+    ):
+      bg_tb.get_time_based_bar_group_for_indian_market(
+        df, group_size_minutes=376, offset_minutes=0
+      )
 
-    with pytest.raises(ValueError, match="offset must be between 0 and 74"):
-      bg_tb.get_time_based_bar_group_for_indian_market(df, group_size=60, offset=75)
+    with pytest.raises(ValueError, match="offset_minutes must be between 0 and 74"):
+      bg_tb.get_time_based_bar_group_for_indian_market(
+        df, group_size_minutes=60, offset_minutes=75
+      )
