@@ -25,12 +25,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 1.01, 0.99, 0.98, 1.05, 1.02],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.03] * 6, index=index)
     vb = pd.Series([5] * 6, index=index)
     side = pd.Series([1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     4  <NA>     5               4                 1
@@ -73,12 +73,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 1.01, 0.99, 0.98, 1.05, 1.02],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
     vb = pd.Series([5] * 6, index=index)
     side = pd.Series([1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     4     2     5               2                -1
@@ -119,12 +119,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 0.99, 1.01, 1.02, 0.95, 0.98],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.03] * 6, index=index)
     vb = pd.Series([5] * 6, index=index)
     side = pd.Series([-1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     4  <NA>     5               4                 1
@@ -165,12 +165,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 0.99, 1.01, 1.02, 0.95, 0.98],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
     vb = pd.Series([5] * 6, index=index)
     side = pd.Series([-1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     4     2     5               2                -1
@@ -211,12 +211,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 1.01, 1, 1.01, 1.05, 1.02],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
     vb = pd.Series([3, 3, 9, 5, 7, 7], index=index)
     side = pd.Series([1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     4  <NA>     3               3                 0
@@ -257,12 +257,12 @@ class TestValidateAndRunTripleBarrier:
       [1, 0.99, 1, 0.99, 0.95, 0.98],
       index=index,
     )
-    inc = pd.Series([1] * 6, index=index)
+    selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.01] * 6, index=index)
     slb = pd.Series([-0.05] * 6, index=index)
     vb = pd.Series([3, 3, 3, 5, 7, 5], index=index)
     side = pd.Series([-1] * 6, index=index)
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     1  <NA>     3               1                 1
@@ -303,13 +303,13 @@ class TestValidateAndRunTripleBarrier:
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
-    inc = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
+    selected = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
     vb = pd.Series([4] * 5, index=index)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1
@@ -349,13 +349,13 @@ class TestValidateAndRunTripleBarrier:
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
-    inc = pd.Series([1, 1, 0, 1, 1], index=index, dtype="Int64")
+    selected = pd.Series([1, 1, 0, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
     vb = pd.Series([4] * 5, index=index)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1
@@ -395,13 +395,13 @@ class TestValidateAndRunTripleBarrier:
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
-    inc = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
+    selected = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
     vb = pd.Series([4, 4, 2, 4, 4], index=index)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1
@@ -442,13 +442,13 @@ class TestValidateAndRunTripleBarrier:
       [1.00, 1.05, 0.95, 1.08],
       index=index,
     )
-    inc = pd.Series([1, 1, 1, 1], index=index, dtype="Int64")
+    selected = pd.Series([1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.04, 0.03, 0.06, 0.05], index=index)
     slb = pd.Series([-0.02, -0.01, -0.03, -0.05], index=index)
     vb = pd.Series([3] * 4, index=index)
     side = pd.Series([1] * 4, index=index, dtype="Int64")
 
-    result = ltb.validate_and_run_triple_barrier(s, inc, tpb, slb, vb, side)
+    result = ltb.triple_barrier(s, selected, tpb, slb, vb, side)
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
     # 2023-01-02 03:45:59.999000+00:00     1     2     3               1                 1

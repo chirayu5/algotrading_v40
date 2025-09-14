@@ -6,13 +6,13 @@ import algotrading_v40.utils.df as udf
 
 def _validate_inputs(
   s: pd.Series,
-  inc: pd.Series,  # whether to run the search on this index
+  selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
   vb: pd.Series,  # absolute integer index of vertical barriers
   side: pd.Series,  # 1 for long bet, -1 for short bet
 ):
-  series_list = [inc, tpb, slb, vb, side]
+  series_list = [selected, tpb, slb, vb, side]
   for series in series_list:
     if not s.index.equals(series.index):
       raise ValueError("All series must have the same index")
@@ -20,7 +20,7 @@ def _validate_inputs(
 
   for series, name in [
     (s, "s"),
-    (inc, "inc"),
+    (selected, "selected"),
     (tpb, "tpb"),
     (slb, "slb"),
     (vb, "vb"),
@@ -29,14 +29,14 @@ def _validate_inputs(
     if udf.analyse_numeric_series_quality(series).n_bad_values != 0:
       raise ValueError(f"{name} must not have bad values")
 
-  for series, name in [(inc, "inc"), (vb, "vb"), (side, "side")]:
+  for series, name in [(selected, "selected"), (vb, "vb"), (side, "side")]:
     if not pd.api.types.is_integer_dtype(series):
       raise TypeError(f"{name} must be integer type")
 
   if not set(side.unique()).issubset({1, -1}):
     raise ValueError("side must only contain values 1 or -1")
-  if not set(inc.unique()).issubset({0, 1}):
-    raise ValueError("inc must only contain values 0 or 1")
+  if not set(selected.unique()).issubset({0, 1}):
+    raise ValueError("selected must only contain values 0 or 1")
 
   if not np.all(vb.values >= np.arange(n)):
     raise ValueError(
@@ -49,9 +49,9 @@ def _validate_inputs(
     raise ValueError("All stop loss barriers must be less than 0")
 
 
-def run_triple_barrier(
+def _triple_barrier(
   s: np.ndarray,
-  inc: np.ndarray,  # whether to run the search on this index
+  selected: np.ndarray,  # whether to run the search on this index
   tpb: np.ndarray,  # take profit barriers
   slb: np.ndarray,  # stop loss barriers
   vb: np.ndarray,  # absolute integer index of vertical barriers
@@ -70,7 +70,7 @@ def run_triple_barrier(
   )
 
   for i in range(n):
-    if (inc[i] == 0) or (vb[i] == i):
+    if (selected[i] == 0) or (vb[i] == i):
       tpha[i] = np.nan
       slha[i] = np.nan
       vbha[i] = np.nan
@@ -94,16 +94,19 @@ def run_triple_barrier(
     del ret
     tpha[i] = tp_idx
     slha[i] = sl_idx
+
+    # first index where vertical barrier is hit
     if vb[i] < n:
       vbha[i] = vb[i]
     else:
       vbha[i] = np.nan
 
   first_touch_at = np.nanmin([tpha, slha, vbha], axis=0)
-  # 1: take profit barrier hit
-  # -1: stop loss barrier hit
-  # 0: vertical barrier hit
-  # np.nan: no barrier hit
+  # first_touch_type:
+  #   1: take profit barrier hit
+  #   -1: stop loss barrier hit
+  #   0: vertical barrier hit
+  #   np.nan: no barrier hit
   for i in range(n):
     if np.isnan(first_touch_at[i]):
       first_touch_type[i] = np.nan
@@ -121,20 +124,20 @@ def run_triple_barrier(
   return tpha, slha, vbha, first_touch_at, first_touch_type, first_touch_return
 
 
-def validate_and_run_triple_barrier(
+def triple_barrier(
   s: pd.Series,
-  inc: pd.Series,  # whether to run the search on this index
+  selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
   vb: pd.Series,  # absolute integer index of vertical barriers
   side: pd.Series,  # 1 for long bet, -1 for short bet
 ) -> pd.DataFrame:
-  _validate_inputs(s, inc, tpb, slb, vb, side)
+  _validate_inputs(s, selected, tpb, slb, vb, side)
 
   tpha, slha, vbha, first_touch_at, first_touch_type, first_touch_return = (
-    run_triple_barrier(
+    _triple_barrier(
       s=s.values,
-      inc=inc.values,
+      selected=selected.values,
       tpb=tpb.values,
       slb=slb.values,
       vb=vb.values,
