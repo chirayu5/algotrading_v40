@@ -2,6 +2,9 @@
 
 // Forward declarations of the helpers implemented
 
+// bar groupers
+void register_time_based_uniform(pybind11::module_ &);
+
 // data selectors
 void register_cusum(pybind11::module_ &);
 
@@ -25,6 +28,10 @@ void register_features(pybind11::module_ &);
 
 PYBIND11_MODULE(algotrading_v40_cpp, m) {
   m.doc() = "algotrading_v40 consolidated C++ extension";
+
+  // submodule: bar groupers
+  auto bg = m.def_submodule("bar_groupers", "bar groupers");
+  register_time_based_uniform(bg);
 
   // submodule: data selectors
   auto ds = m.def_submodule("data_selectors", "data selectors");

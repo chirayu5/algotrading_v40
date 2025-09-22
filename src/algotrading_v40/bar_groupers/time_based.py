@@ -22,6 +22,7 @@ def group_info_for_indian_market(
   Given a timestamp, identify the group it belongs to.
   Return the first ideal timestamp and duration of the group.
   """
+  raise NotImplementedError("This function is deprecated. Do not use it.")
   if group_size_minutes <= 0 or group_size_minutes > 375:
     raise ValueError(
       f"group_size_minutes must be between 1 and 375 (inclusive). Got {group_size_minutes}"
@@ -124,6 +125,9 @@ def get_time_based_bar_group_for_indian_market(
     offset_minutes: offset_minutes in minutes from the start of the day
     group_size_minutes: size of the bar group in minutes
   """
+  raise NotImplementedError(
+    "This function is deprecated. Use bg_tbu.get_time_based_uniform_bar_group_for_indian_market instead."
+  )
   if group_size_minutes <= 0 or group_size_minutes > 375:
     raise ValueError(
       f"group_size_minutes must be between 1 and 375 (inclusive). Got {group_size_minutes}"

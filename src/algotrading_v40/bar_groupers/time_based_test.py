@@ -27,6 +27,9 @@ def _market_ts(minutes_after_open: int, day: dt.date = CURR_DAY) -> pd.Timestamp
   return base + pd.Timedelta(minutes=minutes_after_open)
 
 
+@pytest.mark.skip(
+  reason="Test disabled. This functionality is being replaced by time_based_uniform_test.py"
+)
 class TestGroupInfoForIndianMarket:
   @pytest.mark.parametrize(
     "group_size_minutes, minutes_after_open, expected_first_ideal, expected_duration",
@@ -220,6 +223,9 @@ class TestGroupInfoForIndianMarket:
       )  # > 375
 
 
+@pytest.mark.skip(
+  reason="Test disabled. This functionality is being replaced by time_based_uniform_test.py"
+)
 class TestGetTimeBasedBarGroupForIndianMarket:
   def test_basic_functionality(self):
     timestamps = [
