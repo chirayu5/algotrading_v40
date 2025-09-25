@@ -20,6 +20,9 @@ void register_price_intensity(pybind11::module_ &);
 void register_adx(pybind11::module_ &);
 void register_close_minus_ma(pybind11::module_ &);
 
+// labellers
+void register_triple_barrier(pybind11::module_ &);
+
 // position sizers
 void register_probability_sizer(pybind11::module_ &);
 
@@ -49,6 +52,10 @@ PYBIND11_MODULE(algotrading_v40_cpp, m) {
   register_price_intensity(fc);
   register_adx(fc);
   register_close_minus_ma(fc);
+
+  // submodule: labellers
+  auto lab = m.def_submodule("labellers", "labellers");
+  register_triple_barrier(lab);
 
   // submodule: position sizers
   auto ps = m.def_submodule("position_sizers", "position sizers");
