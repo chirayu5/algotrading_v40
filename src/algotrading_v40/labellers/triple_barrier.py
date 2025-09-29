@@ -39,10 +39,8 @@ def _validate_inputs(
   if not set(selected.unique()).issubset({0, 1}):
     raise ValueError("selected must only contain values 0 or 1")
 
-  if not np.all(vb.values >= np.arange(n)):
-    raise ValueError(
-      "All vertical barriers must be greater than or equal to their index"
-    )
+  if not np.all(vb.values > np.arange(n)):
+    raise ValueError("All vertical barriers must be greater than their index")
 
   if not np.all(tpb > 0):
     raise ValueError("All take profit barriers must be greater than 0")

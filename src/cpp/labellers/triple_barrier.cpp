@@ -48,9 +48,13 @@ pybind11::dict triple_barrier_cpp(
   /* ----------------------------- main loop ------------------------------ */
   for (std::size_t i = 0; i < n1; ++i) {
     /* ----- early exit when no search is needed ----- */
-    if (selected_[i] == 0 || vb_[i] == static_cast<int32_t>(i)) {
+    if (selected_[i] == 0) {
       tpha[i] = slha[i] = vbha[i] = NaN;
       continue;
+    }
+    if (vb_[i] == static_cast<int32_t>(i)) {
+      throw std::runtime_error(
+          "Vertical barrier must be greater than its index");
     }
 
     /* ----- scan forward to detect barrier hits ----- */
