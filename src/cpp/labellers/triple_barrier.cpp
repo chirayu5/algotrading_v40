@@ -9,7 +9,7 @@ namespace {
 
 pybind11::dict triple_barrier_cpp(
     const pybind11::array_t<double, pybind11::array::c_style |
-                                        pybind11::array::forcecast> &s,
+                                        pybind11::array::forcecast> &prices,
     const pybind11::array_t<int32_t, pybind11::array::c_style |
                                          pybind11::array::forcecast> &selected,
     const pybind11::array_t<double, pybind11::array::c_style |
@@ -22,7 +22,7 @@ pybind11::dict triple_barrier_cpp(
                                          pybind11::array::forcecast> &side) {
 
   /* --------------------  borrow raw pointers / sizes -------------------- */
-  const auto [s_, n1] = atv40::io::get_input_ptr<double>(s, "s");
+  const auto [prices_, n1] = atv40::io::get_input_ptr<double>(prices, "prices");
   const auto [selected_, n2] =
       atv40::io::get_input_ptr<int32_t>(selected, "selected");
   const auto [tpb_, n3] = atv40::io::get_input_ptr<double>(tpb, "tpb");
@@ -63,7 +63,7 @@ pybind11::dict triple_barrier_cpp(
     // find the first index where take profit barrier is hit
     for (std::size_t j = i; j < n1; ++j) {
       const double ret_ij =
-          ((s_[j] / s_[i]) - 1.0) * static_cast<double>(side_[i]);
+          ((prices_[j] / prices_[i]) - 1.0) * static_cast<double>(side_[i]);
       if (ret_ij >= tpb_[i]) {
         tp_idx = static_cast<double>(j);
         break;
@@ -73,7 +73,7 @@ pybind11::dict triple_barrier_cpp(
     // find the first index where stop loss barrier is hit
     for (std::size_t j = i; j < n1; ++j) {
       const double ret_ij =
-          ((s_[j] / s_[i]) - 1.0) * static_cast<double>(side_[i]);
+          ((prices_[j] / prices_[i]) - 1.0) * static_cast<double>(side_[i]);
       if (ret_ij <= slb_[i]) {
         sl_idx = static_cast<double>(j);
         break;
@@ -115,13 +115,13 @@ pybind11::dict triple_barrier_cpp(
 
     if (tp == first_at) {
       fttype[i] = 1.0;
-      ftret[i] = (s_[static_cast<std::size_t>(tp)] / s_[i]) - 1.0;
+      ftret[i] = (prices_[static_cast<std::size_t>(tp)] / prices_[i]) - 1.0;
     } else if (sl == first_at) {
       fttype[i] = -1.0;
-      ftret[i] = (s_[static_cast<std::size_t>(sl)] / s_[i]) - 1.0;
+      ftret[i] = (prices_[static_cast<std::size_t>(sl)] / prices_[i]) - 1.0;
     } else { // vertical barrier
       fttype[i] = 0.0;
-      ftret[i] = (s_[static_cast<std::size_t>(vbv)] / s_[i]) - 1.0;
+      ftret[i] = (prices_[static_cast<std::size_t>(vbv)] / prices_[i]) - 1.0;
     }
   }
 
@@ -140,7 +140,7 @@ pybind11::dict triple_barrier_cpp(
 
 /* -------------------   Python registration helper   -------------------- */
 void register_triple_barrier(pybind11::module_ &m) {
-  m.def("triple_barrier_cpp", &triple_barrier_cpp, pybind11::arg("s"),
+  m.def("triple_barrier_cpp", &triple_barrier_cpp, pybind11::arg("prices"),
         pybind11::arg("selected"), pybind11::arg("tpb"), pybind11::arg("slb"),
         pybind11::arg("vb"), pybind11::arg("side"),
         "Fast C++ implementation of the triple-barrier labeling algorithm");

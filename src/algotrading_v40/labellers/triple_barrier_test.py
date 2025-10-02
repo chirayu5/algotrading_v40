@@ -22,7 +22,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_long_take_profit_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 1.01, 0.99, 0.98, 1.05, 1.02],
       index=index,
     )
@@ -34,7 +34,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([6] * 6, index=index)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -63,7 +63,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -74,7 +74,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_long_stop_loss_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 1.01, 0.99, 0.98, 1.05, 1.02],
       index=index,
     )
@@ -84,7 +84,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([6] * 6, index=index)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -113,7 +113,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -122,7 +122,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_short_take_profit_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 0.99, 1.01, 1.02, 0.95, 0.98],
       index=index,
     )
@@ -132,7 +132,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([6] * 6, index=index)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -161,7 +161,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -170,7 +170,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_short_stop_loss_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 0.99, 1.01, 1.02, 0.95, 0.98],
       index=index,
     )
@@ -180,7 +180,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([6] * 6, index=index)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -209,7 +209,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -218,7 +218,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_long_vertical_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 1.01, 1, 1.01, 1.05, 1.02],
       index=index,
     )
@@ -228,7 +228,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([3, 3, 9, 5, 7, 7], index=index)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -257,7 +257,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -266,7 +266,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_short_vertical_barrier(self):
     index = self._create_datetime_index(6)
-    s = pd.Series(
+    prices = pd.Series(
       [1, 0.99, 1, 0.99, 0.95, 0.98],
       index=index,
     )
@@ -276,7 +276,7 @@ class TestValidateAndRunTripleBarrier:
     vb = pd.Series([3, 3, 3, 5, 7, 6], index=index)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -305,7 +305,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -314,7 +314,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_mixed(self):
     index = self._create_datetime_index(5)
-    s = pd.Series(
+    prices = pd.Series(
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
@@ -325,7 +325,7 @@ class TestValidateAndRunTripleBarrier:
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -353,7 +353,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -362,7 +362,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_mixed_with_inc_0(self):
     index = self._create_datetime_index(5)
-    s = pd.Series(
+    prices = pd.Series(
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
@@ -373,7 +373,7 @@ class TestValidateAndRunTripleBarrier:
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -401,7 +401,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
@@ -410,7 +410,7 @@ class TestValidateAndRunTripleBarrier:
 
   def test_mixed_with_vb_same_as_index(self):
     index = self._create_datetime_index(5)
-    s = pd.Series(
+    prices = pd.Series(
       [1.00, 0.94, 1.04, 1.10, 0.90],
       index=index,
     )
@@ -423,12 +423,14 @@ class TestValidateAndRunTripleBarrier:
     with pytest.raises(
       ValueError, match="All vertical barriers must be greater than their index"
     ):
-      _ = ltb.triple_barrier(s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side)
+      _ = ltb.triple_barrier(
+        prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      )
 
   def test_variable_barriers(self):
     index = self._create_datetime_index(4)
 
-    s = pd.Series(
+    prices = pd.Series(
       [1.00, 1.05, 0.95, 1.08],
       index=index,
     )
@@ -439,7 +441,7 @@ class TestValidateAndRunTripleBarrier:
     side = pd.Series([1] * 4, index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      s=s, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -466,7 +468,7 @@ class TestValidateAndRunTripleBarrier:
       }
     )
     expected["first_touch_return"] = expected.apply(
-      lambda row: calc_ret(s.loc[row.name], s.iloc[row["first_touch_at"]])
+      lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,

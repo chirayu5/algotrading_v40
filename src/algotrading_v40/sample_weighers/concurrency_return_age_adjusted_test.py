@@ -470,7 +470,7 @@ class TestConcurrencyReturnAgeAdjustedWeights:
 
     with u_t.expect_no_mutation(df):
       df_tb = l_tb.triple_barrier(
-        s=df["close"],
+        prices=df["close"],
         selected=df["selected"],
         tpb=df["tpb"],
         slb=df["slb"],

@@ -6,7 +6,7 @@ import algotrading_v40.utils.df as udf
 
 
 def _validate_inputs(
-  s: pd.Series,
+  prices: pd.Series,
   selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
@@ -15,12 +15,12 @@ def _validate_inputs(
 ):
   series_list = [selected, tpb, slb, vb, side]
   for series in series_list:
-    if not s.index.equals(series.index):
+    if not prices.index.equals(series.index):
       raise ValueError("All series must have the same index")
-  n = len(s)
+  n = len(prices)
 
   for series, name in [
-    (s, "s"),
+    (prices, "prices"),
     (selected, "selected"),
     (tpb, "tpb"),
     (slb, "slb"),
@@ -50,25 +50,25 @@ def _validate_inputs(
 
 def triple_barrier(
   *,
-  s: pd.Series,
+  prices: pd.Series,
   selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
   vb: pd.Series,  # absolute integer index of vertical barriers
   side: pd.Series,  # 1 for long bet, -1 for short bet
 ) -> pd.DataFrame:
-  _validate_inputs(s, selected, tpb, slb, vb, side)
+  _validate_inputs(prices, selected, tpb, slb, vb, side)
 
   result = pd.DataFrame(
     av40c_l.triple_barrier_cpp(
-      s=s.values,
-      selected=selected.values,
-      tpb=tpb.values,
-      slb=slb.values,
-      vb=vb.values,
-      side=side.values,
+      prices=prices.to_numpy(),
+      selected=selected.to_numpy(),
+      tpb=tpb.to_numpy(),
+      slb=slb.to_numpy(),
+      vb=vb.to_numpy(),
+      side=side.to_numpy(),
     ),
-    index=s.index,
+    index=prices.index,
   ).astype(
     {
       "tpha": "Int32",
