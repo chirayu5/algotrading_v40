@@ -49,6 +49,7 @@ def _validate_inputs(
 
 
 def triple_barrier(
+  *,
   s: pd.Series,
   selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
