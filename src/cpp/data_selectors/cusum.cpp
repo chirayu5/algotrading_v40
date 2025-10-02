@@ -7,12 +7,14 @@ static pybind11::array_t<int32_t> cusum_cpp(
     const pybind11::array_t<double, pybind11::array::c_style |
                                         pybind11::array::forcecast> &s_diff,
     const pybind11::array_t<double, pybind11::array::c_style |
-                                        pybind11::array::forcecast> &h) {
+                                        pybind11::array::forcecast>
+        &thresholds) {
 
   const auto [s_diff_, n] = atv40::io::get_input_ptr<double>(s_diff, "s_diff");
-  const auto [h_, n2] = atv40::io::get_input_ptr<double>(h, "h");
+  const auto [thresholds_, n2] =
+      atv40::io::get_input_ptr<double>(thresholds, "thresholds");
   if (n != n2) {
-    throw std::runtime_error("s_diff and h must have the same length");
+    throw std::runtime_error("s_diff and thresholds must have the same length");
   }
 
   // Create output array
@@ -32,10 +34,10 @@ static pybind11::array_t<int32_t> cusum_cpp(
     s_pos = std::max(0.0, s_pos + s_diff_[i]);
     s_neg = std::min(0.0, s_neg + s_diff_[i]);
 
-    if (s_neg < -h_[i]) {
+    if (s_neg < -thresholds_[i]) {
       s_neg = 0.0;
       output[i] = -1;
-    } else if (s_pos > h_[i]) {
+    } else if (s_pos > thresholds_[i]) {
       s_pos = 0.0;
       output[i] = 1;
     } else {
@@ -47,6 +49,6 @@ static pybind11::array_t<int32_t> cusum_cpp(
 }
 
 void register_cusum(pybind11::module_ &m) {
-  m.def("cusum_cpp", &cusum_cpp, pybind11::arg("s_diff"), pybind11::arg("h"),
-        "CUSUM filter for event detection");
+  m.def("cusum_cpp", &cusum_cpp, pybind11::arg("s_diff"),
+        pybind11::arg("thresholds"), "CUSUM filter for event detection");
 }
