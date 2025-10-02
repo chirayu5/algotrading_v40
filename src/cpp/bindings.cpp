@@ -26,6 +26,9 @@ void register_triple_barrier(pybind11::module_ &);
 // position sizers
 void register_probability_sizer(pybind11::module_ &);
 
+// sample weighers
+void register_concurrency_return_age_adjusted_weights(pybind11::module_ &);
+
 // utils
 void register_features(pybind11::module_ &);
 
@@ -60,6 +63,10 @@ PYBIND11_MODULE(algotrading_v40_cpp, m) {
   // submodule: position sizers
   auto ps = m.def_submodule("position_sizers", "position sizers");
   register_probability_sizer(ps);
+
+  // submodule: sample weighers
+  auto sw = m.def_submodule("sample_weighers", "sample weighers");
+  register_concurrency_return_age_adjusted_weights(sw);
 
   // submodule: utils
   auto utils = m.def_submodule("utils", "utils");

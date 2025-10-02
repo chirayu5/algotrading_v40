@@ -333,7 +333,7 @@ class TestConcurrencyReturnAgeAdjustedWeights:
       label_last_indices=[-1, np.nan, np.nan],  # Invalid: negative
     )
 
-    with pytest.raises(ValueError, match="Invalid values for index"):
+    with pytest.raises(RuntimeError, match="Invalid values for index"):
       sw_craa.concurrency_return_age_adjusted_weights(
         selected=df["selected"],
         label_last_indices=df["label_last_index"],
@@ -349,7 +349,7 @@ class TestConcurrencyReturnAgeAdjustedWeights:
       label_last_indices=[3, np.nan, np.nan],  # Invalid: >= len(df)
     )
 
-    with pytest.raises(ValueError, match="Invalid values for index"):
+    with pytest.raises(RuntimeError, match="Invalid values for index"):
       sw_craa.concurrency_return_age_adjusted_weights(
         selected=df["selected"],
         label_last_indices=df["label_last_index"],
@@ -365,7 +365,7 @@ class TestConcurrencyReturnAgeAdjustedWeights:
       label_last_indices=[np.nan, 1, np.nan, np.nan],  # Invalid: lli[1]=1 but needs > 1
     )
 
-    with pytest.raises(ValueError, match="Invalid values for index"):
+    with pytest.raises(RuntimeError, match="Invalid values for index"):
       sw_craa.concurrency_return_age_adjusted_weights(
         selected=df["selected"],
         label_last_indices=df["label_last_index"],

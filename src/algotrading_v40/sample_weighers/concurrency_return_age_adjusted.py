@@ -1,3 +1,4 @@
+import algotrading_v40_cpp.sample_weighers as av40c_sw
 import numpy as np
 import pandas as pd
 
@@ -276,7 +277,7 @@ def concurrency_return_age_adjusted_weights(
     time_decay_c=time_decay_c,
   )
   result = pd.DataFrame(
-    data=_concurrency_return_age_adjusted_weights(
+    data=av40c_sw.concurrency_return_age_adjusted_weights_cpp(
       label_last_indices=label_last_indices.to_numpy(),
       prices=prices.to_numpy(),
       time_decay_c=time_decay_c,
