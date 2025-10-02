@@ -182,29 +182,40 @@ def _concurrency_return_age_adjusted_weights(
 
 def _validate_inputs(
   *,
-  df: pd.DataFrame,
+  selected: pd.Series,
+  label_last_indices: pd.Series,
+  prices: pd.Series,
   time_decay_c: float,
 ):
-  if not (df.index.is_monotonic_increasing and df.index.is_unique):
+  index = selected.index
+  for series, name in [
+    (selected, "selected"),
+    (label_last_indices, "label_last_indices"),
+    (prices, "prices"),
+  ]:
+    if not series.index.equals(index):
+      raise ValueError(f"{name} must have the same index as selected")
+
+  if not (index.is_monotonic_increasing and index.is_unique):
     raise ValueError("index must be monotonic increasing and unique")
 
   for series, name in [
-    (df["selected"], "selected"),
-    (df["close"], "prices"),
+    (selected, "selected"),
+    (prices, "prices"),
   ]:
     if u_df.analyse_numeric_series_quality(series).n_bad_values != 0:
       raise ValueError(f"{name} must not have bad values")
 
-  if not set(df["selected"].unique()).issubset({0, 1}):
+  if not set(selected.unique()).issubset({0, 1}):
     raise ValueError("selected must only contain values 0 or 1")
 
-  if np.sum(df["selected"]) == 0:
+  if np.sum(selected) == 0:
     raise ValueError("No significant samples found")
 
-  if np.isfinite(df["label_last_index"]).sum() == 0:
+  if np.isfinite(label_last_indices).sum() == 0:
     raise ValueError("No non-NaN label_last_index found")
 
-  lli_ns = df["label_last_index"].loc[df["selected"] == 0]
+  lli_ns = label_last_indices.loc[selected == 0]
   if u_df.analyse_numeric_series_quality(lli_ns).n_bad_values != len(lli_ns):
     raise ValueError(
       "selected=0 cases must have all values bad for label_last_indices since they weren't labelled"
@@ -221,7 +232,7 @@ def _validate_inputs(
   # and so has label_last_index=good (even though the vertical barrier was out of bounds))
   # so, not checking selected=1 cases
 
-  if not np.all(df["close"] > 0):
+  if not np.all(prices > 0):
     raise ValueError("prices must be greater than 0")
 
   if (not np.isfinite(time_decay_c)) or time_decay_c < 0 or time_decay_c > 1:
@@ -229,7 +240,10 @@ def _validate_inputs(
 
 
 def concurrency_return_age_adjusted_weights(
-  df: pd.DataFrame,
+  *,
+  selected: pd.Series,
+  label_last_indices: pd.Series,
+  prices: pd.Series,
   time_decay_c: float,
 ) -> pd.DataFrame:
   """
@@ -256,23 +270,25 @@ def concurrency_return_age_adjusted_weights(
       ValueError: if inputs are invalid
   """
   _validate_inputs(
-    df=df,
+    selected=selected,
+    label_last_indices=label_last_indices,
+    prices=prices,
     time_decay_c=time_decay_c,
   )
   result = pd.DataFrame(
     data=_concurrency_return_age_adjusted_weights(
-      label_last_indices=df["label_last_index"].values,
-      prices=df["close"].values,
+      label_last_indices=label_last_indices.to_numpy(),
+      prices=prices.to_numpy(),
       time_decay_c=time_decay_c,
     ),
-    index=df.index,
+    index=selected.index,
   )
 
   for col in result.columns:
     if col == "concurrency":
       continue
     if not u_df.analyse_numeric_series_quality(result[col]).good_values_mask.equals(
-      u_df.analyse_numeric_series_quality(df["label_last_index"]).good_values_mask
+      u_df.analyse_numeric_series_quality(label_last_indices).good_values_mask
     ):
       raise ValueError(
         f"{col} and label_last_index must have the same good values mask"

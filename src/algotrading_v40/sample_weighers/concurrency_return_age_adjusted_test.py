@@ -5,7 +5,9 @@ import pandas as pd
 import pytest
 
 import algotrading_v40.constants as ctnts
+import algotrading_v40.labellers.triple_barrier as l_tb
 import algotrading_v40.sample_weighers.concurrency_return_age_adjusted as sw_craa
+import algotrading_v40.utils.df as u_df
 import algotrading_v40.utils.testing as u_t
 
 
@@ -69,7 +71,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     # 2025-09-15 03:53:59.999000+00:00   90.0         1               NaN
 
     with u_t.expect_no_mutation(df):
-      result = sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      result = sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     # with pd.option_context("display.max_rows", None, "display.max_columns", None):
     #   print("result\n", result)
@@ -164,7 +171,10 @@ class TestConcurrencyReturnAgeAdjustedWeights:
 
     with u_t.expect_no_mutation(df):
       result = sw_craa.concurrency_return_age_adjusted_weights(
-        df, time_decay_c=time_decay_c
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=time_decay_c,
       )
 
     # with pd.option_context("display.max_rows", None, "display.max_columns", None):
@@ -212,7 +222,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
       label_last_indices=[np.nan, np.nan, np.nan],
     )
     with pytest.raises(ValueError, match="No non-NaN label_last_index found"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_invalid_selected_values(self):
     """Test that selected must only contain 0 or 1."""
@@ -225,7 +240,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="selected must only contain values 0 or 1"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_invalid_prices(self):
     """Test that prices must be positive."""
@@ -238,7 +258,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="prices must be greater than 0"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     timestamps = [_market_ts(i) for i in range(3)]
     df = _create_test_df(
@@ -249,7 +274,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="prices must be greater than 0"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     timestamps = [_market_ts(i) for i in range(3)]
     df = _create_test_df(
@@ -260,7 +290,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="prices must not have bad values"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_invalid_time_decay_c(self):
     """Test that time_decay_c must be in [0,1]."""
@@ -273,10 +308,20 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="time_decay_c must be a finite number in"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=-0.1)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=-0.1,
+      )
 
     with pytest.raises(ValueError, match="time_decay_c must be a finite number in"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.1)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.1,
+      )
 
   def test_invalid_label_last_index(self):
     """Test that negative label_last_index raises error."""
@@ -289,7 +334,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="Invalid values for index"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     timestamps = [_market_ts(i) for i in range(3)]
     df = _create_test_df(
@@ -300,7 +350,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="Invalid values for index"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     timestamps = [_market_ts(i) for i in range(4)]
     df = _create_test_df(
@@ -311,7 +366,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="Invalid values for index"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_no_selected_samples_raises_error(self):
     """Test that all selected=0 raises error."""
@@ -324,7 +384,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     )
 
     with pytest.raises(ValueError, match="No significant samples found"):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_selected_0_with_lli_nan_fails(self):
     """Test that selected=0 must have NaN label_last_index."""
@@ -340,7 +405,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
       ValueError,
       match="selected=0 cases must have all values bad for label_last_indices",
     ):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_index_not_monotonic_increasing_or_unique(self):
     """Test that index mismatch raises error."""
@@ -354,7 +424,12 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     with pytest.raises(
       ValueError, match="index must be monotonic increasing and unique"
     ):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
     timestamps = [_market_ts(0), _market_ts(0), _market_ts(2)]
     df = _create_test_df(
@@ -366,8 +441,56 @@ class TestConcurrencyReturnAgeAdjustedWeights:
     with pytest.raises(
       ValueError, match="index must be monotonic increasing and unique"
     ):
-      sw_craa.concurrency_return_age_adjusted_weights(df, time_decay_c=1.0)
+      sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df["label_last_index"],
+        prices=df["close"],
+        time_decay_c=1.0,
+      )
 
   def test_integration_with_triple_barrier_labelling(self):
-    # TODO: implement this
-    pass
+    df = (
+      u_t.get_test_df(
+        start_date=dt.date(2025, 9, 15),
+        end_date=dt.date(2025, 9, 19),
+      )
+      * 4
+    )
+    df.drop(columns=["open", "high", "low", "volume"], inplace=True)
+    df["vol"] = np.log(df["close"].shift(1)).diff().ewm(span=30).std()
+
+    df["tpb"] = df["vol"] * 10
+    df["slb"] = df["vol"] * -10
+
+    df["selected"] = np.random.randint(0, 2, len(df))
+    df["side"] = 1
+    df["vb"] = np.arange(len(df)) + 45
+
+    df = df.iloc[20:]
+
+    with u_t.expect_no_mutation(df):
+      df_tb = l_tb.triple_barrier(
+        s=df["close"],
+        selected=df["selected"],
+        tpb=df["tpb"],
+        slb=df["slb"],
+        vb=df["vb"],
+        side=df["side"],
+      )
+    # print(df_tb["first_touch_type"].value_counts(dropna=False))
+
+    with u_t.expect_no_mutation(df, df_tb):
+      df_craa = sw_craa.concurrency_return_age_adjusted_weights(
+        selected=df["selected"],
+        label_last_indices=df_tb["first_touch_at"],
+        prices=df["close"],
+        time_decay_c=0.5,
+      )
+
+    swg = df_craa["sample_weight"].loc[
+      u_df.analyse_numeric_series_quality(df_craa["sample_weight"]).good_values_mask
+    ]
+    ssw = swg.sum()
+    n = len(swg)
+
+    df_craa["sample_weight"] = n * df_craa["sample_weight"] / ssw
