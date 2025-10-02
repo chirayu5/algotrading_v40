@@ -24,56 +24,52 @@ class TestValidateAndRunCusum:
   def test_basic_positive_and_negative_events(self) -> None:
     index = self._make_index(4)
     s = pd.Series([0.0, 3.0, 0.0, 3.0], index=index, name="price")
-    h = 2.0
+    h = pd.Series([2.0] * len(index), index=index)
 
-    expected = pd.Series([0, 1, -1, 1], index=index, dtype="int32").rename(
-      "selected_cusum_2.0"
-    )
+    expected = pd.Series([0, 1, -1, 1], index=index, dtype="int32").rename("selected")
     with ut.expect_no_mutation(s):
-      result = dsc.cusum(s, h, f_diff=lambda x: x.diff())
-    pd.testing.assert_series_equal(result["selected_cusum_2.0"], expected)
+      result = dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
+    pd.testing.assert_series_equal(result["selected"], expected)
 
   def test_threshold_equal_does_not_trigger(self) -> None:
     index = self._make_index(3)
     s = pd.Series([0.0, 2.0, 3.0], index=index)
-    h = 2.0
+    h = pd.Series([2.0] * len(index), index=index)
 
-    expected = pd.Series([0, 0, 1], index=index, dtype="int32").rename(
-      "selected_cusum_2.0"
-    )
+    expected = pd.Series([0, 0, 1], index=index, dtype="int32").rename("selected")
     with ut.expect_no_mutation(s):
-      result = dsc.cusum(s, h, f_diff=lambda x: x.diff())
-    pd.testing.assert_series_equal(result["selected_cusum_2.0"], expected)
+      result = dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
+    pd.testing.assert_series_equal(result["selected"], expected)
 
   def test_bad_values_in_s_raises(self) -> None:
     index = self._make_index(3)
     s = pd.Series([np.nan, 1.0, 2.0], index=index)
-    h = 1.0
+    h = pd.Series([1.0] * len(index), index=index)
 
     with pytest.raises(ValueError, match="s must not have bad values"):
       with ut.expect_no_mutation(s):
-        dsc.cusum(s, h, f_diff=lambda x: x.diff())
+        dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
 
   def test_non_positive_threshold_raises(self) -> None:
     index = self._make_index(3)
     s = pd.Series([0.0, 1.0, 2.0], index=index)
-    h = 0.0
+    h = pd.Series([0.0] * len(index), index=index)
 
     with pytest.raises(ValueError, match="cusum threshold must be greater than 0"):
       with ut.expect_no_mutation(s):
-        dsc.cusum(s, h, f_diff=lambda x: x.diff())
+        dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
 
   def test_stream_vs_batch(self) -> None:
     np.random.seed(42)
     df = ut.get_test_df(
       start_date=dt.date(2023, 1, 2),
-      end_date=dt.date(2023, 1, 12),
+      end_date=dt.date(2023, 1, 2),
     )
 
     def inner_(df_: pd.DataFrame) -> pd.DataFrame:
       return dsc.cusum(
         s=df_["open"],
-        h=0.02,
+        h=pd.Series([0.005] * len(df_["open"]), index=df_["open"].index),
         f_diff=lambda x: np.log(x).diff(),
       )
 
@@ -83,23 +79,35 @@ class TestValidateAndRunCusum:
     )
     assert result.dfs_match
     # check the test is testing a significant number of events
-    assert result.df_batch["selected_cusum_0.02"].abs().sum() >= 50
-    assert (
-      result.df_batch["selected_cusum_0.02"].abs().sum() / len(result.df_batch) >= 0.01
-    )
+    assert result.df_batch["selected"].value_counts(dropna=False)[0] >= 20
+    assert result.df_batch["selected"].value_counts(dropna=False)[1] >= 20
+    assert result.df_batch["selected"].value_counts(dropna=False)[-1] >= 20
+    assert result.df_batch["selected"].abs().sum() / len(result.df_batch) >= 0.01
 
-  def test_large_series(self) -> None:
+  def test_variable_threshold(self) -> None:
+    index = self._make_index(10)
+    s = pd.Series([90, 95, 108, 99, 102, 98, 24, 106, 7, 72], index=index)
+    h = pd.Series([3, 4, 7, 9, 3, 6, 9, 3, 7, 7], index=index)
+
+    with ut.expect_no_mutation(s):
+      result = dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
+
+    expected = pd.Series(
+      [0, 1, 1, 0, -1, 0, -1, 1, -1, 1], index=index, dtype="int32"
+    ).rename("selected")
+    pd.testing.assert_series_equal(result["selected"], expected)
+
+  def test_large_series_matches_On2_algorithm(self) -> None:
     index = self._make_index(300)
     s = pd.Series(np.random.randint(1, 120, len(index)), index=index)
-    h = np.random.randint(1, 10)
+    h = pd.Series(np.random.randint(1, 40, len(index)), index=index)
+
     n = len(index)
     expected = [0] * n
     for j in range(1, n):
       # check if expected[j] should be 1
       for i in range(j - 1, -1, -1):
-        if s.iloc[i] > s.iloc[j]:
-          break
-        if s.iloc[j] - s.iloc[i] > h:
+        if s.iloc[j] - s.iloc[i] > h.iloc[j]:
           expected[j] = 1
           break
         if expected[i] == 1:
@@ -107,17 +115,23 @@ class TestValidateAndRunCusum:
 
       # check if expected[j] should be -1
       for i in range(j - 1, -1, -1):
-        if s.iloc[i] < s.iloc[j]:
-          break
-        if s.iloc[j] - s.iloc[i] < -h:
+        if s.iloc[j] - s.iloc[i] < -h.iloc[j]:
           expected[j] = -1
           break
         if expected[i] == -1:
           break
 
-    expected = pd.Series(expected, index=index, dtype="int32").rename(
-      f"selected_cusum_{h}"
-    )
+    expected = pd.Series(expected, index=index, dtype="int32").rename("selected")
     with ut.expect_no_mutation(s):
-      result = dsc.cusum(s, h, f_diff=lambda x: x.diff())
-    pd.testing.assert_series_equal(result[f"selected_cusum_{h}"], expected)
+      result = dsc.cusum(s=s, h=h, f_diff=lambda x: x.diff())
+    pd.testing.assert_series_equal(result["selected"], expected)
+
+  def test_empty_series(self) -> None:
+    index = self._make_index(4)
+    s = pd.Series([0.0, 3.0, 0.0, 3.0], index=index, name="price")
+    h = pd.Series([2.0] * len(index), index=index)
+    # actual data does not matter as we do [:0] on the series to get an empty series
+    expected = pd.Series(s[:0], index=index[:0], dtype="int32").rename("selected")
+    with ut.expect_no_mutation(s):
+      result = dsc.cusum(s=s.iloc[:0], h=h.iloc[:0], f_diff=lambda x: x.diff())
+    pd.testing.assert_series_equal(result["selected"], expected)

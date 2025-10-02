@@ -55,18 +55,23 @@ def plot_cusum_result(s: pd.Series, cusum: pd.Series, sz=15, figsize=(12, 6), dp
 
 
 def cusum(
+  *,
   s: pd.Series,  # series to select events on
-  h: float,  # cusum threshold
+  h: pd.Series,  # cusum threshold
   f_diff: Callable[[pd.Series], pd.Series],
 ) -> pd.DataFrame:
   if udf.analyse_numeric_series_quality(s).n_bad_values > 0:
     raise ValueError("s must not have bad values")
 
-  if h <= 0:
+  if udf.analyse_numeric_series_quality(h).n_bad_values > 0:
+    raise ValueError("h must not have bad values")
+
+  if h.min() <= 0:
     raise ValueError("cusum threshold must be greater than 0")
+  # all h are > 0
   s_diff = f_diff(s)
   return pd.DataFrame(
-    data=av40c_ds.cusum_cpp(s_diff.values, h),
+    data=av40c_ds.cusum_cpp(s_diff.to_numpy(), h.to_numpy()),
     index=s.index,
-    columns=[f"selected_cusum_{h}"],
+    columns=["selected"],
   )
