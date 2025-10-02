@@ -1,6 +1,5 @@
 #include "../utils/io.cpp"
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
