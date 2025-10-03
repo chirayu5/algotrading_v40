@@ -1,80 +1,61 @@
-import dataclasses
-
 import algotrading_v40_cpp.position_sizers as av40c_ps
-import numpy as np
 import pandas as pd
-from scipy.stats import norm
+
+# def get_bet_return(
+#   p0: float,
+#   p1: float,
+#   side: int,
+# ) -> float:
+#   return side * ((p1 / p0) - 1)
 
 
-def get_size(prob: float) -> float:
-  # clip the probability to avoid division by 0
-  prob = np.clip(prob, 1e-10, 1 - 1e-10)
-  v = (prob - 0.5) / np.sqrt((prob * (1 - prob)))
-  return 2 * norm.cdf(v) - 1
+# @dataclasses.dataclass(frozen=True)
+# class Bet:
+#   size: float
+#   side: int  # -1 for short, 1 for long
+#   bet_open_timestamp_int: int
+#   bet_entry_price: float
+#   tpb: float
+#   slb: float
+#   vb_timestamp_int_exec: int
+
+#   def __post_init__(self):
+#     if self.size < 0:
+#       raise ValueError("size must be non-negative")
+#     if self.size > 1:
+#       raise ValueError("size must be less than or equal to 1")
+#     if self.side not in [-1, 1]:
+#       raise ValueError("side must be -1 or 1")
+#     if self.bet_entry_price <= 0:
+#       raise ValueError("bet_entry_price must be positive")
+
+#   def should_close(
+#     self,
+#     current_timestamp_int: int,  # close timestamp_int of the current bar
+#     # while streaming, bar might not be fully formed but we know what the close timestamp_int will be
+#     highest_price: float,
+#     lowest_price: float,
+#   ) -> bool:
+#     if current_timestamp_int >= self.vb_timestamp_int_exec:
+#       return True
+#     bet_return_h = get_bet_return(
+#       p0=self.bet_entry_price, p1=highest_price, side=self.side
+#     )
+#     bet_return_l = get_bet_return(
+#       p0=self.bet_entry_price, p1=lowest_price, side=self.side
+#     )
+#     if (
+#       max(bet_return_h, bet_return_l) >= self.tpb
+#       or min(bet_return_h, bet_return_l) <= self.slb
+#     ):
+#       return True
+#     return False
 
 
-def get_bet_return(
-  p0: float,
-  p1: float,
-  side: int,
-) -> float:
-  return side * ((p1 / p0) - 1)
-
-
-@dataclasses.dataclass(frozen=True)
-class Bet:
-  size: float
-  side: int  # -1 for short, 1 for long
-  bet_open_timestamp_int: int
-  bet_entry_price: float
-  tpb: float
-  slb: float
-  vb_timestamp_int_exec: int
-
-  def __post_init__(self):
-    if self.size < 0:
-      raise ValueError("size must be non-negative")
-    if self.size > 1:
-      raise ValueError("size must be less than or equal to 1")
-    if self.side not in [-1, 1]:
-      raise ValueError("side must be -1 or 1")
-    if self.bet_entry_price <= 0:
-      raise ValueError("bet_entry_price must be positive")
-
-  def should_close(
-    self,
-    current_timestamp_int: int,  # close timestamp_int of the current bar
-    # while streaming, bar might not be fully formed but we know what the close timestamp_int will be
-    highest_price: float,
-    lowest_price: float,
-  ) -> bool:
-    if current_timestamp_int >= self.vb_timestamp_int_exec:
-      return True
-    bet_return_h = get_bet_return(
-      p0=self.bet_entry_price, p1=highest_price, side=self.side
-    )
-    bet_return_l = get_bet_return(
-      p0=self.bet_entry_price, p1=lowest_price, side=self.side
-    )
-    if (
-      max(bet_return_h, bet_return_l) >= self.tpb
-      or min(bet_return_h, bet_return_l) <= self.slb
-    ):
-      return True
-    return False
-
-
-def average_bets(bets: list[Bet]) -> float:
-  if not bets:
-    return 0.0
-  return sum((bet.size * bet.side) for bet in bets) / len(bets)
-
-
-def discretise_position(
-  position: float,
-  step_size: float,
-) -> float:
-  return np.sign(position) * np.round(np.abs(position) / step_size) * step_size
+# def average_bets(bets: list[Bet]) -> float:
+#   if not bets:
+#     return 0.0
+#   return sum((bet.size * bet.side) for bet in bets) / len(bets)
 
 
 # def probability_position_sizer_(

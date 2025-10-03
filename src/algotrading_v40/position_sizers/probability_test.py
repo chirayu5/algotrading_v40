@@ -3,6 +3,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import norm
 
 import algotrading_v40.position_sizers.probability as psp
 import algotrading_v40.utils.streaming as us
@@ -41,6 +42,20 @@ def make_df(index: list[pd.Timestamp]) -> pd.DataFrame:
   )
 
 
+def get_size(prob: float) -> float:
+  # clip the probability to avoid division by 0
+  prob = np.clip(prob, 1e-10, 1 - 1e-10)
+  v = (prob - 0.5) / np.sqrt((prob * (1 - prob)))
+  return 2 * norm.cdf(v) - 1
+
+
+def discretise_position(
+  position: float,
+  step_size: float,
+) -> float:
+  return np.sign(position) * np.round(np.abs(position) / step_size) * step_size
+
+
 # a configuration that avoids extra rounding inside the sizing routine
 QA_STEP = 1e-1
 QA_MAX = 1e5
@@ -77,8 +92,8 @@ def test_average_of_multiple_long_bets():
   )
   # print("output for test_average_of_multiple_long_bets:")
   # print(out.to_string())
-  size_a = psp.get_size(0.60)
-  size_c = psp.get_size(0.85)
+  size_a = get_size(0.60)
+  size_c = get_size(0.85)
   expected = (size_a + size_c) / 2
 
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
@@ -110,8 +125,8 @@ def test_average_long_and_short_bets():
   )
   # print("output for test_average_long_and_short_bets:")
   # print(out.to_string())
-  size_long = psp.get_size(0.65)
-  size_short = psp.get_size(0.80)
+  size_long = get_size(0.65)
+  size_short = get_size(0.80)
   expected = (size_long * 1 + size_short * -1) / 2
 
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
@@ -141,7 +156,7 @@ def test_open_new_long_bet():
   )
   # print("output for test_open_new_long_bet:")
   # print(out.to_string())
-  expected = psp.get_size(0.75)  # only one active bet
+  expected = get_size(0.75)  # only one active bet
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
 
@@ -169,7 +184,7 @@ def test_open_new_short_bet():
   )
   # print("output for test_open_new_short_bet:")
   # print(out.to_string())
-  expected = psp.get_size(0.80) * -1
+  expected = get_size(0.80) * -1
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
 
@@ -205,7 +220,7 @@ def test_long_bet_closed_at_stop_loss():
   )
   # print("output for test_long_bet_closed_at_stop_loss:")
   # print(out.to_string())
-  expected = psp.get_size(0.60)  # only Bet #1 is still active
+  expected = get_size(0.60)  # only Bet #1 is still active
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
 
@@ -236,7 +251,7 @@ def test_short_bet_closed_at_take_profit():
   )
   # print("output for test_short_bet_closed_at_take_profit:")
   # print(out.to_string())
-  assert np.isclose(out.loc[idx[0], "raw_qa_position"], -psp.get_size(0.75))
+  assert np.isclose(out.loc[idx[0], "raw_qa_position"], -get_size(0.75))
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], 0.0)
 
 
@@ -268,10 +283,10 @@ def test_bets_closed_by_vertical_barrier():
   # print("output for test_bets_closed_by_vertical_barrier:")
   # print(out.to_string())
   # one bet open
-  assert np.isclose(out.loc[idx[0], "raw_qa_position"], psp.get_size(0.65))
+  assert np.isclose(out.loc[idx[0], "raw_qa_position"], get_size(0.65))
   # two bets open
   assert np.isclose(
-    out.loc[idx[1], "raw_qa_position"], (psp.get_size(0.7) + psp.get_size(0.65)) / 2
+    out.loc[idx[1], "raw_qa_position"], (get_size(0.7) + get_size(0.65)) / 2
   )
   # vertical barrier hit...both bets closed
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], 0.0)
@@ -383,8 +398,8 @@ def test_final_ba_position_is_rounded_down_to_step():
   # print(out.to_string())
 
   # --- expected value -------------------------------------------------------
-  size = psp.get_size(prob_val)  # raw QA size (between 0-1)
-  rdqa = psp.discretise_position(size, QA_STEP)  # after QA discretisation
+  size = get_size(prob_val)  # raw QA size (between 0-1)
+  rdqa = discretise_position(size, QA_STEP)  # after QA discretisation
   discretised_qa_position = rdqa * QA_MAX  # quote-asset position
   unrounded_ba = discretised_qa_position / open_price  # before BA rounding
   expected_ba = (
