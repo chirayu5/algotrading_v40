@@ -1,5 +1,3 @@
-from typing import Callable
-
 import algotrading_v40_cpp.data_selectors as av40c_ds
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -58,7 +56,6 @@ def cusum(
   *,
   s: pd.Series,  # series to select events on
   thresholds: pd.Series,  # cusum threshold
-  f_diff: Callable[[pd.Series], pd.Series],
 ) -> pd.DataFrame:
   if udf.analyse_numeric_series_quality(s).n_bad_values > 0:
     raise ValueError("s must not have bad values")
@@ -69,7 +66,9 @@ def cusum(
   if thresholds.min() <= 0:
     raise ValueError("cusum threshold must be greater than 0")
   # all thresholds are > 0
-  s_diff = f_diff(s)
+  s_diff = s.diff()
+  # s_diff[0] would be NaN but that is not used in av40c_ds.cusum_cpp.
+  # so it is safe to ignore it.
   return pd.DataFrame(
     data=av40c_ds.cusum_cpp(s_diff.to_numpy(), thresholds.to_numpy()),
     index=s.index,
