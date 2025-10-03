@@ -271,6 +271,7 @@ def probability_position_sizer(
   ba_step_size: float | None,
   # maximum absolute position size in quote asset (INR, USD, USDT, etc.)
   qa_max: float,
+  position_allowed: pd.Series = None,  # position allowed
 ) -> pd.DataFrame:
   index = prob.index
   for sn, s in (
@@ -285,6 +286,15 @@ def probability_position_sizer(
   ):
     if not s.index.equals(index):
       raise ValueError(f"{sn} index must be the same as prob index")
+
+  if position_allowed is not None:
+    if not position_allowed.index.equals(index):
+      raise ValueError("position_allowed index must be the same as prob index")
+    if not position_allowed.isin([0, 1]).all():
+      raise ValueError("position_allowed values must be only 0 or 1")
+  else:
+    position_allowed = pd.Series([1] * len(prob), index=index)
+
   close_timestamp_int = index.astype(int)
   # integer representation of the index timestamp
   # example: 2021-01-01 03:45:59.999000+00:00 -> 1609472759999000000
@@ -300,6 +310,7 @@ def probability_position_sizer(
       slb=slb.to_numpy(),
       close_timestamp_int=close_timestamp_int.to_numpy(),
       vb_timestamp_exec_int=vb_timestamp_exec_int.to_numpy(),
+      position_allowed=position_allowed.to_numpy(),
       qa_step_size=qa_step_size,
       ba_step_size=ba_step_size,
       qa_max=qa_max,

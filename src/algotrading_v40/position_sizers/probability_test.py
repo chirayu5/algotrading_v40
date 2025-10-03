@@ -591,37 +591,74 @@ def test_stream_vs_batch():
 
 
 # --------------------------------------------------------------------------- #
-# 12. py vs cpp match                                                          #
+# 12. position allowed
 # --------------------------------------------------------------------------- #
-# def test_py_cpp_match():
-#   np.random.seed(42)
-#   df = ut.get_test_df(
-#     start_date=dt.date(2023, 1, 2),
-#     end_date=dt.date(2023, 6, 2),
-#   )
-#   n = len(df)
-#   df["prob"] = np.random.uniform(0.5, 1, n)
-#   df["side"] = np.random.choice([-1, 1], n)
-#   df["selected"] = np.random.choice([0, 1], n)
-#   df["tpb"] = np.random.uniform(0.01, 0.1, n)
-#   df["slb"] = np.random.uniform(-0.1, -0.01, n)
-#   df["vb_timestamp_exec_int"] = df.index + pd.to_timedelta(
-#     np.random.randint(1, 81, n), unit="min"
-#   )
+def test_position_allowed():
+  df = pd.DataFrame(
+    {
+      "open": [268.70, 269.05, 269.30, 269.28, 268.70],
+      "high": [269.07, 269.25, 269.34, 269.40, 268.77],
+      "low": [268.62, 269.02, 269.15, 268.71, 268.62],
+      "close": [269.07, 269.25, 269.30, 268.71, 268.68],
+      "volume": [1, 1, 1, 1, 1],
+      "prob": [0.533824, 0.736792, 0.544903, 0.848821, 0.926738],
+      "side": [-1, -1, 1, 1, 1],
+      "selected": [1, 1, 0, 1, 1],
+      "tpb": [0.093419, 0.049842, 0.090408, 0.071795, 0.081796],
+      "slb": [-0.013168, -0.067938, -0.036831, -0.046839, -0.055281],
+      "vb_timestamp_exec_int": [
+        1672633259999000000,
+        1672634159999000000,
+        1672631699999000000,
+        1672634339999000000,
+        1672634819999000000,
+      ],
+      "position_allowed": [0, 1, 0, 1, 0],
+    },
+    index=pd.to_datetime(
+      [
+        "2023-01-02 03:45:59.999000+00:00",
+        "2023-01-02 03:46:59.999000+00:00",
+        "2023-01-02 03:47:59.999000+00:00",
+        "2023-01-02 03:48:59.999000+00:00",
+        "2023-01-02 03:49:59.999000+00:00",
+      ]
+    ),
+  )
+  df.index.name = "bar_close_timestamp"
 
-#   cpp_res = psp.probability_position_sizer(
-#     df=df,
-#     qa_step_size=QA_STEP,
-#     ba_step_size=1,
-#     qa_max=QA_MAX,
-#     use_cpp=True,
-#   )
-#   py_res = psp.probability_position_sizer(
-#     df=df,
-#     qa_step_size=QA_STEP,
-#     ba_step_size=1,
-#     qa_max=QA_MAX,
-#     use_cpp=False,
-#   )
+  # with pd.option_context("display.max_rows", None, "display.max_columns", None):
+  #   print(df.to_string())
 
-#   pd.testing.assert_frame_equal(cpp_res, py_res)
+  out_pa = psp.probability_position_sizer(
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
+    qa_step_size=QA_STEP,
+    ba_step_size=BA_STEP_NONE,
+    qa_max=QA_MAX,
+    position_allowed=df["position_allowed"],
+  )
+
+  out = psp.probability_position_sizer(
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
+    qa_step_size=QA_STEP,
+    ba_step_size=BA_STEP_NONE,
+    qa_max=QA_MAX,
+  )
+  assert not out_pa.equals(out)
+  assert out_pa.equals(out.mul(df["position_allowed"], axis=0))

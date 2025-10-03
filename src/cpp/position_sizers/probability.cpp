@@ -76,6 +76,9 @@ pybind11::dict probability_position_sizer_cpp(
     const pybind11::array_t<int64_t, pybind11::array::c_style |
                                          pybind11::array::forcecast>
         &vb_ts_exec_int,
+    const pybind11::array_t<int32_t, pybind11::array::c_style |
+                                         pybind11::array::forcecast>
+        &position_allowed,
     /* --- scalars --- */
     double qa_step_size, std::optional<double> ba_step_size, double qa_max) {
 
@@ -93,8 +96,10 @@ pybind11::dict probability_position_sizer_cpp(
       atv40::io::get_input_ptr<int64_t>(close_ts_int, "close_ts_int");
   const auto [vb_ts_exec_, n10] =
       atv40::io::get_input_ptr<int64_t>(vb_ts_exec_int, "vb_ts_exec_int");
+  const auto [position_allowed_, n11] =
+      atv40::io::get_input_ptr<int32_t>(position_allowed, "position_allowed");
 
-  for (auto nii : {n1, n2, n3, n4, n5, n6, n7, n8, n9, n10}) {
+  for (auto nii : {n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11}) {
     if (nii != n1)
       throw std::runtime_error("Array length mismatch.");
   }
@@ -163,6 +168,13 @@ pybind11::dict probability_position_sizer_cpp(
     }
   }
 
+  // apply position allowed
+  for (std::size_t i = 0; i < n1; ++i) {
+    raw_out[i] *= position_allowed_[i];
+    disc_out[i] *= position_allowed_[i];
+    ba_out[i] *= position_allowed_[i];
+  }
+
   /* ----------  return dict with three arrays ---------- */
   pybind11::dict d;
   d["raw_qa_position"] = raw_out_arr;
@@ -180,7 +192,8 @@ void register_probability_sizer(pybind11::module_ &m) {
         pybind11::arg("high"), pybind11::arg("low"), pybind11::arg("selected"),
         pybind11::arg("tpb"), pybind11::arg("slb"),
         pybind11::arg("close_timestamp_int"),
-        pybind11::arg("vb_timestamp_exec_int"), pybind11::arg("qa_step_size"),
+        pybind11::arg("vb_timestamp_exec_int"),
+        pybind11::arg("position_allowed"), pybind11::arg("qa_step_size"),
         pybind11::arg("ba_step_size"), pybind11::arg("qa_max"),
         "Probability-based position sizer (C++)");
 }
