@@ -50,16 +50,27 @@ def plot_cusum_result(s: pd.Series, cusum: pd.Series, sz=15, figsize=(12, 6), dp
   plt.show()
 
 
-def cusum(
+def _validate_inputs(
   *,
-  s: pd.Series,  # series to select events on
-  thresholds: pd.Series,  # cusum threshold
-) -> pd.DataFrame:
+  s: pd.Series,
+  thresholds: pd.Series,
+  position_allowed: pd.Series,
+) -> None:
   if udf.analyse_numeric_series_quality(s).n_bad_values > 0:
     raise ValueError("s must not have bad values")
 
   if udf.analyse_numeric_series_quality(thresholds).n_bad_values > 0:
     raise ValueError("thresholds must not have bad values")
+
+  if position_allowed is not None:
+    if udf.analyse_numeric_series_quality(position_allowed).n_bad_values > 0:
+      raise ValueError("position_allowed must not have bad values")
+
+    if not position_allowed.isin([0, 1]).all():
+      raise ValueError("position_allowed must only contain 0 or 1")
+
+    if not s.index.equals(position_allowed.index):
+      raise ValueError("s.index and position_allowed.index must be the same")
 
   if not s.index.equals(thresholds.index):
     raise ValueError("s.index and thresholds.index must be the same")
@@ -67,11 +78,24 @@ def cusum(
   if thresholds.min() <= 0:
     raise ValueError("cusum threshold must be greater than 0")
   # all thresholds are > 0
+
+
+def cusum(
+  *,
+  s: pd.Series,  # series to select events on
+  thresholds: pd.Series,  # cusum threshold
+  position_allowed: pd.Series = None,  # position allowed
+) -> pd.DataFrame:
+  _validate_inputs(s=s, thresholds=thresholds, position_allowed=position_allowed)
+  if position_allowed is None:
+    position_allowed = pd.Series([1] * len(s), index=s.index)
   s_diff = s.diff()
   # s_diff[0] would be NaN but that is not used in av40c_ds.cusum_cpp.
   # so it is safe to ignore it.
   return pd.DataFrame(
-    data=av40c_ds.cusum_cpp(s_diff.to_numpy(), thresholds.to_numpy()),
+    data=av40c_ds.cusum_cpp(
+      s_diff.to_numpy(), thresholds.to_numpy(), position_allowed.to_numpy()
+    ),
     index=s.index,
     columns=["selected"],
   )

@@ -100,12 +100,15 @@ class TestValidateAndRunCusum:
     index = self._make_index(300)
     s = pd.Series(np.random.randint(1, 120, len(index)), index=index)
     thresholds = pd.Series(np.random.randint(1, 40, len(index)), index=index)
+    position_allowed = pd.Series(np.random.randint(0, 2, len(index)), index=index)
 
     n = len(index)
     expected = [0] * n
     for j in range(1, n):
       # check if expected[j] should be 1
       for i in range(j - 1, -1, -1):
+        if position_allowed.iloc[j] == 0:
+          continue
         if s.iloc[j] - s.iloc[i] > thresholds.iloc[j]:
           expected[j] = 1
           break
@@ -114,6 +117,8 @@ class TestValidateAndRunCusum:
 
       # check if expected[j] should be -1
       for i in range(j - 1, -1, -1):
+        if position_allowed.iloc[j] == 0:
+          continue
         if s.iloc[j] - s.iloc[i] < -thresholds.iloc[j]:
           expected[j] = -1
           break
@@ -122,7 +127,7 @@ class TestValidateAndRunCusum:
 
     expected = pd.Series(expected, index=index, dtype="int32").rename("selected")
     with ut.expect_no_mutation(s):
-      result = dsc.cusum(s=s, thresholds=thresholds)
+      result = dsc.cusum(s=s, thresholds=thresholds, position_allowed=position_allowed)
     pd.testing.assert_series_equal(result["selected"], expected)
 
   def test_empty_series(self) -> None:
@@ -139,9 +144,15 @@ class TestValidateAndRunCusum:
     index = self._make_index(4)
     s = pd.Series([0.0, 3.0, 0.0, 3.0], index=index)
     thresholds = pd.Series([2.0] * len(index), index=self._make_index(8)[4:])
+    position_allowed = pd.Series([1] * len(index), index=self._make_index(18)[-4:])
 
     with pytest.raises(
       ValueError, match="s.index and thresholds.index must be the same"
     ):
-      with ut.expect_no_mutation(s):
-        dsc.cusum(s=s, thresholds=thresholds)
+      dsc.cusum(s=s, thresholds=thresholds)
+
+    with pytest.raises(
+      ValueError, match="s.index and position_allowed.index must be the same"
+    ):
+      thresholds = pd.Series([2.0] * len(index), index=index)
+      dsc.cusum(s=s, thresholds=thresholds, position_allowed=position_allowed)
