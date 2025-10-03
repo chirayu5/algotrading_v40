@@ -25,7 +25,7 @@ def ns(ts: pd.Timestamp) -> int:
 def make_df(index: list[pd.Timestamp]) -> pd.DataFrame:
   """Return a minimally-filled dataframe with constant, valid defaults."""
   n = len(index)
-  return pd.DataFrame(
+  df = pd.DataFrame(
     {
       # these will be overwritten by individual tests where needed
       "prob": 0.55,
@@ -36,10 +36,12 @@ def make_df(index: list[pd.Timestamp]) -> pd.DataFrame:
       "selected": 0,
       "tpb": 0.03,
       "slb": -0.03,
-      "vb_timestamp_exec": [ns(index[-1] + ONE_MIN)] * n,
+      "vb_timestamp_exec_int": [ns(index[-1] + ONE_MIN)] * n,
     },
     index=index,
   )
+  df["vb_timestamp_exec_int"] = df["vb_timestamp_exec_int"].astype(int)
+  return df
 
 
 def get_size(prob: float) -> float:
@@ -85,7 +87,15 @@ def test_average_of_multiple_long_bets():
   # print("data for test_average_of_multiple_long_bets:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -118,7 +128,15 @@ def test_average_long_and_short_bets():
   # print("data for test_average_long_and_short_bets:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -149,7 +167,15 @@ def test_open_new_long_bet():
   # print("data for test_open_new_long_bet:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -177,7 +203,15 @@ def test_open_new_short_bet():
   # print("data for test_open_new_short_bet:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -213,7 +247,15 @@ def test_long_bet_closed_at_stop_loss():
   # print(df.to_string())
 
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -244,7 +286,15 @@ def test_short_bet_closed_at_take_profit():
   # print("data for test_short_bet_closed_at_take_profit:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -265,8 +315,8 @@ def test_bets_closed_by_vertical_barrier():
   vb_hit_time = ns(idx[2])  # barrier on the last row
 
   # two bets with the SAME vertical barrier
-  df.loc[idx[0], ["prob", "selected", "vb_timestamp_exec"]] = (0.65, 1, vb_hit_time)
-  df.loc[idx[1], ["prob", "selected", "vb_timestamp_exec"]] = (0.70, 1, vb_hit_time)
+  df.loc[idx[0], ["prob", "selected", "vb_timestamp_exec_int"]] = (0.65, 1, vb_hit_time)
+  df.loc[idx[1], ["prob", "selected", "vb_timestamp_exec_int"]] = (0.70, 1, vb_hit_time)
 
   # set the last row's OHLC values to NaN to simulate a stream
   df.loc[idx[-1], ["high", "low"]] = np.nan
@@ -275,7 +325,15 @@ def test_bets_closed_by_vertical_barrier():
   # print("data for test_bets_closed_by_vertical_barrier:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -308,7 +366,15 @@ def test_discretised_position_bounds(p: float):
   # print("data for test_discretised_position_bounds:")
   # print(df.to_string())
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -343,7 +409,15 @@ def test_final_ba_position_unchanged_when_qa_position_same():
   # print(df.to_string())
 
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -388,7 +462,15 @@ def test_final_ba_position_is_rounded_down_to_step():
   # print(df.to_string())
 
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP,
     qa_max=QA_MAX,
@@ -424,7 +506,7 @@ def test_new_bet_immediately_closed_by_vertical_barrier():
   # • a new long bet is opened (selected = 1)
   # • the vertical barrier is the bar's own close-timestamp ⇒ immediate close
   prob_val = 0.80
-  df.loc[idx[0], ["prob", "selected", "vb_timestamp_exec"]] = (
+  df.loc[idx[0], ["prob", "selected", "vb_timestamp_exec_int"]] = (
     prob_val,
     1,
     ns(idx[0]),  # barrier hit NOW
@@ -436,7 +518,15 @@ def test_new_bet_immediately_closed_by_vertical_barrier():
   # print(df.to_string())
 
   out = psp.probability_position_sizer(
-    df=df,
+    prob=df["prob"],
+    side=df["side"],
+    open=df["open"],
+    high=df["high"],
+    low=df["low"],
+    selected=df["selected"],
+    tpb=df["tpb"],
+    slb=df["slb"],
+    vb_timestamp_exec_int=df["vb_timestamp_exec_int"],
     qa_step_size=QA_STEP,
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
@@ -466,9 +556,9 @@ def test_stream_vs_batch():
   selected = np.random.choice([0, 1], n)
   tpb = np.random.uniform(0.01, 0.1, n)
   slb = np.random.uniform(-0.1, -0.01, n)
-  vb_timestamp_exec = df.index + pd.to_timedelta(
-    np.random.randint(1, 81, n), unit="min"
-  )
+  vb_timestamp_exec_int = (
+    df.index + pd.to_timedelta(np.random.randint(1, 81, n), unit="min")
+  ).astype(int)
 
   def inner_(df_: pd.DataFrame) -> pd.DataFrame:
     n_ = len(df_)
@@ -477,9 +567,17 @@ def test_stream_vs_batch():
     df_["selected"] = selected[:n_]
     df_["tpb"] = tpb[:n_]
     df_["slb"] = slb[:n_]
-    df_["vb_timestamp_exec"] = vb_timestamp_exec[:n_]
+    df_["vb_timestamp_exec_int"] = vb_timestamp_exec_int[:n_]
     return psp.probability_position_sizer(
-      df=df_,
+      prob=df_["prob"],
+      side=df_["side"],
+      open=df_["open"],
+      high=df_["high"],
+      low=df_["low"],
+      selected=df_["selected"],
+      tpb=df_["tpb"],
+      slb=df_["slb"],
+      vb_timestamp_exec_int=df_["vb_timestamp_exec_int"],
       qa_step_size=QA_STEP,
       ba_step_size=1,
       qa_max=QA_MAX,
@@ -507,7 +605,7 @@ def test_stream_vs_batch():
 #   df["selected"] = np.random.choice([0, 1], n)
 #   df["tpb"] = np.random.uniform(0.01, 0.1, n)
 #   df["slb"] = np.random.uniform(-0.1, -0.01, n)
-#   df["vb_timestamp_exec"] = df.index + pd.to_timedelta(
+#   df["vb_timestamp_exec_int"] = df.index + pd.to_timedelta(
 #     np.random.randint(1, 81, n), unit="min"
 #   )
 

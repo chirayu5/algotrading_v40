@@ -246,7 +246,8 @@ import pandas as pd
 #   )
 
 
-def probability_position_sizer_(
+def probability_position_sizer(
+  *,
   prob: pd.Series,  # probability of the prediction being correct
   side: pd.Series,  # 1 or -1
   open: pd.Series,  # open price series from OHLCV bars
@@ -255,10 +256,7 @@ def probability_position_sizer_(
   selected: pd.Series,  # whether a new bet can be opened on this index. existing bets can be closed at all indices though.
   tpb: pd.Series,  # take profit barriers; a take profit of 3% will be 0.03
   slb: pd.Series,  # stop loss barriers; signed; so a stop loss of 3% will be -0.03
-  close_timestamp_int: pd.Series,  # integer representation of the index timestamp
-  # example: 2021-01-01 03:45:59.999000+00:00 -> 1609472759999000000
-  # (can be found by doing `df.index.astype(int)`)
-  vb_timestamp_int_exec: pd.Series,  # integer timestamp of vertical barriers
+  vb_timestamp_exec_int: pd.Series,  # integer timestamp of vertical barriers
   # any bet opened here needs to be closed on or before this timestamp.
   # the _exec (execution) suffix is needed as vertical barriers during execution can
   # be different from vertical barriers during labelling.
@@ -274,47 +272,37 @@ def probability_position_sizer_(
   # maximum absolute position size in quote asset (INR, USD, USDT, etc.)
   qa_max: float,
 ) -> pd.DataFrame:
+  index = prob.index
+  for sn, s in (
+    ("side", side),
+    ("open", open),
+    ("high", high),
+    ("low", low),
+    ("selected", selected),
+    ("tpb", tpb),
+    ("slb", slb),
+    ("vb_timestamp_exec_int", vb_timestamp_exec_int),
+  ):
+    if not s.index.equals(index):
+      raise ValueError(f"{sn} index must be the same as prob index")
+  close_timestamp_int = index.astype(int)
+  # integer representation of the index timestamp
+  # example: 2021-01-01 03:45:59.999000+00:00 -> 1609472759999000000
   return pd.DataFrame(
     data=av40c_ps.probability_position_sizer_cpp(
-      prob=prob.values,
-      side=side.values,
-      open=open.values,
-      high=high.values,
-      low=low.values,
-      selected=selected.values,
-      tpb=tpb.values,
-      slb=slb.values,
-      close_timestamp_int=close_timestamp_int.values,
-      vb_timestamp_int_exec=vb_timestamp_int_exec.values,
+      prob=prob.to_numpy(),
+      side=side.to_numpy(),
+      open=open.to_numpy(),
+      high=high.to_numpy(),
+      low=low.to_numpy(),
+      selected=selected.to_numpy(),
+      tpb=tpb.to_numpy(),
+      slb=slb.to_numpy(),
+      close_timestamp_int=close_timestamp_int.to_numpy(),
+      vb_timestamp_exec_int=vb_timestamp_exec_int.to_numpy(),
       qa_step_size=qa_step_size,
       ba_step_size=ba_step_size,
       qa_max=qa_max,
     ),
-    index=prob.index,
+    index=index,
   )
-
-
-def probability_position_sizer(
-  df: pd.DataFrame,
-  qa_step_size: float,
-  ba_step_size: float | None,
-  qa_max: float,
-) -> pd.DataFrame:
-  df["close_timestamp_int"] = df.index.astype(int)
-  res = probability_position_sizer_(
-    prob=df["prob"],
-    side=df["side"],
-    open=df["open"],
-    high=df["high"],
-    low=df["low"],
-    selected=df["selected"],
-    tpb=df["tpb"],
-    slb=df["slb"],
-    close_timestamp_int=df["close_timestamp_int"],
-    vb_timestamp_int_exec=df["vb_timestamp_exec"].astype(int),
-    qa_step_size=qa_step_size,
-    ba_step_size=ba_step_size,
-    qa_max=qa_max,
-  )
-  df.drop(columns=["close_timestamp_int"], inplace=True)
-  return res

@@ -75,7 +75,7 @@ pybind11::dict probability_position_sizer_cpp(
         &close_ts_int,
     const pybind11::array_t<int64_t, pybind11::array::c_style |
                                          pybind11::array::forcecast>
-        &vb_ts_exec,
+        &vb_ts_exec_int,
     /* --- scalars --- */
     double qa_step_size, std::optional<double> ba_step_size, double qa_max) {
 
@@ -92,7 +92,7 @@ pybind11::dict probability_position_sizer_cpp(
   const auto [close_ts_int_, n9] =
       atv40::io::get_input_ptr<int64_t>(close_ts_int, "close_ts_int");
   const auto [vb_ts_exec_, n10] =
-      atv40::io::get_input_ptr<int64_t>(vb_ts_exec, "vb_ts_exec");
+      atv40::io::get_input_ptr<int64_t>(vb_ts_exec_int, "vb_ts_exec_int");
 
   for (auto nii : {n1, n2, n3, n4, n5, n6, n7, n8, n9, n10}) {
     if (nii != n1)
@@ -180,7 +180,7 @@ void register_probability_sizer(pybind11::module_ &m) {
         pybind11::arg("high"), pybind11::arg("low"), pybind11::arg("selected"),
         pybind11::arg("tpb"), pybind11::arg("slb"),
         pybind11::arg("close_timestamp_int"),
-        pybind11::arg("vb_timestamp_int_exec"), pybind11::arg("qa_step_size"),
+        pybind11::arg("vb_timestamp_exec_int"), pybind11::arg("qa_step_size"),
         pybind11::arg("ba_step_size"), pybind11::arg("qa_max"),
         "Probability-based position sizer (C++)");
 }
@@ -198,7 +198,7 @@ profit barriers; a take profit of 3% will be 0.03 slb: pd.Series,  # stop loss
 barriers; signed; so a stop loss of 3% will be -0.03 close_timestamp_int:
 pd.Series,  # integer representation of the index timestamp # example:
 2021-01-01 03:45:59.999000+00:00 -> 1609472759999000000 # (can be found by doing
-`df.index.astype(int)`) vb_timestamp_int_exec: pd.Series,  # integer timestamp
+`df.index.astype(int)`) vb_timestamp_exec_int: pd.Series,  # integer timestamp
 of vertical barriers # any bet opened here needs to be closed on or before this
 timestamp. # the _exec (execution) suffix is needed as vertical barriers during
 execution can # be different from vertical barriers during labelling. # example
@@ -228,7 +228,7 @@ for discretising position sizes in base asset (stock units, BTCUSDT units, etc.)
       tpb,
       slb,
       close_timestamp_int,
-      vb_timestamp_int_exec,
+      vb_timestamp_exec_int,
     ]
   ):
     raise ValueError("All series must have the same index")
@@ -259,8 +259,8 @@ for discretising position sizes in base asset (stock units, BTCUSDT units, etc.)
     raise ValueError("prob values must be between 0.5 and 1 (inclusive)")
   if not pd.api.types.is_integer_dtype(close_timestamp_int):
     raise ValueError("close_timestamp_int must be of integer dtype")
-  if not pd.api.types.is_integer_dtype(vb_timestamp_int_exec):
-    raise ValueError("vb_timestamp_int_exec must be of integer dtype")
+  if not pd.api.types.is_integer_dtype(vb_timestamp_exec_int):
+    raise ValueError("vb_timestamp_exec_int must be of integer dtype")
 
   n = len(prob)
 
@@ -294,7 +294,7 @@ ValueError( "open_price, high_price_prev, and low_price_prev must be positive"
       raise ValueError("open_price, high_price_prev, and low_price_prev must be
 finite") sel_i = selected.iloc[i] tpb_i = tpb.iloc[i] slb_i = slb.iloc[i]
     close_ts_int_i = close_timestamp_int.iloc[i]
-    vb_ts_int_exec_i = vb_timestamp_int_exec.iloc[i]
+    vb_ts_int_exec_i = vb_timestamp_exec_int.iloc[i]
 
     if tpb_i <= 0 or slb_i >= 0:
       raise ValueError("tpb and slb must be positive and negative respectively")
@@ -312,7 +312,7 @@ finite") sel_i = selected.iloc[i] tpb_i = tpb.iloc[i] slb_i = slb.iloc[i]
           bet_entry_price=open_price_i,
           tpb=tpb_i,
           slb=slb_i,
-          vb_timestamp_int_exec=vb_ts_int_exec_i,
+          vb_timestamp_exec_int=vb_ts_int_exec_i,
         )
       )
 
