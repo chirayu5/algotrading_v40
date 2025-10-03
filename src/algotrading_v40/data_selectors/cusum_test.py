@@ -134,3 +134,14 @@ class TestValidateAndRunCusum:
     with ut.expect_no_mutation(s):
       result = dsc.cusum(s=s.iloc[:0], thresholds=thresholds.iloc[:0])
     pd.testing.assert_series_equal(result["selected"], expected)
+
+  def test_index_mismatch_raises(self) -> None:
+    index = self._make_index(4)
+    s = pd.Series([0.0, 3.0, 0.0, 3.0], index=index)
+    thresholds = pd.Series([2.0] * len(index), index=self._make_index(8)[4:])
+
+    with pytest.raises(
+      ValueError, match="s.index and thresholds.index must be the same"
+    ):
+      with ut.expect_no_mutation(s):
+        dsc.cusum(s=s, thresholds=thresholds)

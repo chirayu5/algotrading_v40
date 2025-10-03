@@ -6,8 +6,6 @@ import algotrading_v40.utils.df as udf
 
 
 def plot_cusum_result(s: pd.Series, cusum: pd.Series, sz=15, figsize=(12, 6), dpi=100):
-  if not isinstance(s.index, pd.DatetimeIndex):
-    raise ValueError("s.index must be a DatetimeIndex")
   if not s.index.equals(cusum.index):
     raise ValueError("s.index and cusum.index must be the same")
 
@@ -62,6 +60,9 @@ def cusum(
 
   if udf.analyse_numeric_series_quality(thresholds).n_bad_values > 0:
     raise ValueError("thresholds must not have bad values")
+
+  if not s.index.equals(thresholds.index):
+    raise ValueError("s.index and thresholds.index must be the same")
 
   if thresholds.min() <= 0:
     raise ValueError("cusum threshold must be greater than 0")
