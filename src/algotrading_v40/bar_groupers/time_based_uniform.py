@@ -1,10 +1,11 @@
 import dataclasses
 import datetime as dt
 
-import algotrading_v40_cpp.bar_groupers as av40c_bg
+import numpy as np
 import pandas as pd
 
 import algotrading_v40.constants as ctnts
+import algotrading_v40.trading_time_elapsed_calculators.with_overnight_gaps_only as ttec_wogo
 
 
 @dataclasses.dataclass(frozen=True)
@@ -35,14 +36,6 @@ def get_time_based_uniform_bar_group_for_indian_market(
       bar_groups=pd.Series(index=df.index),
       offsets=pd.Series(index=df.index),
     )
-  # Convert index to "minutes since first row"
-  minutes_from_first_row = df.index.astype(int)
-  minutes_from_first_row = (
-    minutes_from_first_row - minutes_from_first_row[0]
-  ) // ctnts.NANOS_PER_MINUTE
-
-  # Day offsets relative to first row's calendar date
-  day_offsets = pd.Series(df.index.date - df.index.date[0]).dt.days.values
 
   overnight_gap_minutes = int(
     (
@@ -59,20 +52,24 @@ def get_time_based_uniform_bar_group_for_indian_market(
     - 1
   )
   # overnight_gap_minutes is 1065 for standard Indian-market timings
-
-  out = av40c_bg.time_based_uniform_cpp(
-    minutes_from_first_row,
-    day_offsets,
-    group_size_minutes,
-    offset_minutes,
-    overnight_gap_minutes,
+  # tte: trading time elapsed
+  tte = ttec_wogo.with_overnight_gaps_only(
+    index=df.index,
+    overnight_gap_minutes=overnight_gap_minutes,
   )
-  group_start_positions = out["group_start_positions"]
-  offsets = out["offsets"]
+  tte += group_size_minutes - offset_minutes
+  grouped_tte = group_size_minutes * (tte // group_size_minutes)
+  group_start_positions = (
+    pd.Series(np.arange(len(df)), index=df.index)
+    .where(grouped_tte != grouped_tte.shift(1))
+    .ffill()
+    .fillna(0)
+    .astype(int)
+  )
 
   return GetTimeBasedUniformBarGroupForIndianMarketResult(
     bar_groups=pd.Series(
       df.index[group_start_positions], index=df.index, name="bar_group"
     ),
-    offsets=pd.Series(offsets, index=df.index),
+    offsets=pd.Series(tte % group_size_minutes, index=df.index),
   )

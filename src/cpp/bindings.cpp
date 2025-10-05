@@ -29,6 +29,9 @@ void register_probability_sizer(pybind11::module_ &);
 // sample weighers
 void register_concurrency_return_age_adjusted_weights(pybind11::module_ &);
 
+// trading time elapsed calculators
+void register_with_overnight_gaps_only(pybind11::module_ &);
+
 // utils
 void register_features(pybind11::module_ &);
 
@@ -67,6 +70,11 @@ PYBIND11_MODULE(algotrading_v40_cpp, m) {
   // submodule: sample weighers
   auto sw = m.def_submodule("sample_weighers", "sample weighers");
   register_concurrency_return_age_adjusted_weights(sw);
+
+  // submodule: trading time elapsed calculators
+  auto ttec = m.def_submodule("trading_time_elapsed_calculators",
+                              "trading time elapsed calculators");
+  register_with_overnight_gaps_only(ttec);
 
   // submodule: utils
   auto utils = m.def_submodule("utils", "utils");

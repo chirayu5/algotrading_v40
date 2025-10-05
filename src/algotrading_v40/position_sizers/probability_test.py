@@ -105,7 +105,7 @@ def test_average_of_multiple_long_bets():
   size_a = get_size(0.60)
   size_c = get_size(0.85)
   expected = (size_a + size_c) / 2
-
+  assert np.isclose(expected, 0.4173770820080792)
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
 
@@ -146,7 +146,7 @@ def test_average_long_and_short_bets():
   size_long = get_size(0.65)
   size_short = get_size(0.80)
   expected = (size_long * 1 + size_short * -1) / 2
-
+  assert np.isclose(expected, -0.14994883000608916)
   assert np.isclose(out.loc[idx[-1], "raw_qa_position"], expected)
 
 
@@ -660,5 +660,8 @@ def test_position_allowed():
     ba_step_size=BA_STEP_NONE,
     qa_max=QA_MAX,
   )
+  # with pd.option_context("display.max_rows", None, "display.max_columns", None):
+  #   print("out:\n", out.to_string())
+  #   print("out_pa:\n", out_pa.to_string())
   assert not out_pa.equals(out)
   assert out_pa.equals(out.mul(df["position_allowed"], axis=0))
