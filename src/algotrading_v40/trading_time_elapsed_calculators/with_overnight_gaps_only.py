@@ -14,6 +14,8 @@ def _validate_inputs(
     raise ValueError("index must be in UTC timezone")
 
   if overnight_gap_minutes < 0:
+    # a zero overnight gap is considered valid as it can be used for
+    # the case of continously trading markets (e.g. BTCUSDT Perpetual Futures on Binance)
     raise ValueError("overnight_gap_minutes must be non-negative")
 
 

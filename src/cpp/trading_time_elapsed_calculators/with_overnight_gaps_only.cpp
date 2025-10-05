@@ -11,8 +11,8 @@ static pybind11::array_t<int> with_overnight_gaps_only_cpp(
                                      pybind11::array::forcecast>
         &days_from_first_day,
     int overnight_gap_minutes) {
-  if (overnight_gap_minutes <= 0)
-    throw std::runtime_error("overnight_gap_minutes must be positive");
+  if (overnight_gap_minutes < 0)
+    throw std::runtime_error("overnight_gap_minutes must be non-negative");
 
   const auto [mins, n] = atv40::io::get_input_ptr<int>(
       minutes_from_first_data_point, "minutes_from_first_data_point");

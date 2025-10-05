@@ -72,6 +72,9 @@ class TestWithOvernightGapsOnly:
     with pytest.raises(ValueError):
       ttec_wogo.with_overnight_gaps_only(idx_good, -1)
 
+    # zero overnight gap is valid
+    _ = ttec_wogo.with_overnight_gaps_only(idx_good, 0)
+
   def test_streaming_matches_batch(self):
     """Ensure streaming and batch outputs are identical."""
     np.random.seed(42)
