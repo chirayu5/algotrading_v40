@@ -1,51 +1,30 @@
 import algotrading_v40_cpp.labellers as av40c_l
-import numpy as np
 import pandas as pd
 
-import algotrading_v40.utils.df as udf
+import algotrading_v40.utils.df as u_df
 
 
 def _validate_inputs(
+  *,
   prices: pd.Series,
   selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
-  vb: pd.Series,  # absolute integer index of vertical barriers
+  vb_tte: pd.Series,  # vertical barrier in trading time elapsed
+  tte: pd.Series,  # trading time elapsed
   side: pd.Series,  # 1 for long bet, -1 for short bet
+  do_index_check: bool = True,
 ):
-  series_list = [selected, tpb, slb, vb, side]
-  for series in series_list:
-    if not prices.index.equals(series.index):
-      raise ValueError("All series must have the same index")
-  n = len(prices)
+  if do_index_check:
+    u_df.check_indices_match(prices, selected, tpb, slb, vb_tte, tte, side)
 
-  for series, name in [
-    (prices, "prices"),
-    (selected, "selected"),
-    (tpb, "tpb"),
-    (slb, "slb"),
-    (vb, "vb"),
-    (side, "side"),
-  ]:
-    if udf.analyse_numeric_series_quality(series).n_bad_values != 0:
-      raise ValueError(f"{name} must not have bad values")
-
-  for series, name in [(selected, "selected"), (vb, "vb"), (side, "side")]:
-    if not pd.api.types.is_integer_dtype(series):
-      raise TypeError(f"{name} must be integer type")
-
-  if not set(side.unique()).issubset({1, -1}):
-    raise ValueError("side must only contain values 1 or -1")
-  if not set(selected.unique()).issubset({0, 1}):
-    raise ValueError("selected must only contain values 0 or 1")
-
-  if not np.all(vb.values > np.arange(n)):
-    raise ValueError("All vertical barriers must be greater than their index")
-
-  if not np.all(tpb > 0):
-    raise ValueError("All take profit barriers must be greater than 0")
-  if not np.all(slb < 0):
-    raise ValueError("All stop loss barriers must be less than 0")
+  u_df.check_index_u_and_mi(prices.index)
+  u_df.check_no_bad_values(prices, selected, tte, side)
+  u_df.check_all_in(selected, values=(0, 1))
+  u_df.check_all_gt0(prices, tpb.loc[selected == 1])
+  u_df.check_all_gte0(vb_tte.loc[selected == 1])
+  u_df.check_all_lt0(slb.loc[selected == 1])
+  u_df.check_all_in(side, values=(-1, 1))
 
 
 def triple_barrier(
@@ -54,10 +33,19 @@ def triple_barrier(
   selected: pd.Series,  # whether to run the search on this index
   tpb: pd.Series,  # take profit barriers
   slb: pd.Series,  # stop loss barriers
-  vb: pd.Series,  # absolute integer index of vertical barriers
+  vb_tte: pd.Series,  # vertical barrier in trading time elapsed
+  tte: pd.Series,  # trading time elapsed
   side: pd.Series,  # 1 for long bet, -1 for short bet
 ) -> pd.DataFrame:
-  _validate_inputs(prices, selected, tpb, slb, vb, side)
+  _validate_inputs(
+    prices=prices,
+    selected=selected,
+    tpb=tpb,
+    slb=slb,
+    vb_tte=vb_tte,
+    tte=tte,
+    side=side,
+  )
 
   result = pd.DataFrame(
     av40c_l.triple_barrier_cpp(
@@ -65,7 +53,8 @@ def triple_barrier(
       selected=selected.to_numpy(),
       tpb=tpb.to_numpy(),
       slb=slb.to_numpy(),
-      vb=vb.to_numpy(),
+      vb_tte=vb_tte.to_numpy(),
+      tte=tte.to_numpy(),
       side=side.to_numpy(),
     ),
     index=prices.index,
@@ -76,7 +65,7 @@ def triple_barrier(
       "vbha": "Int32",
       "first_touch_at": "Int32",
       "first_touch_type": "Int32",
-      "first_touch_return": "float32",
+      "first_touch_raw_return": "float32",
     }
   )
   return result

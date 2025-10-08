@@ -1,8 +1,11 @@
+import datetime as dt
+
 import numpy as np
 import pandas as pd
-import pytest
 
+import algotrading_v40.constants as ctnts
 import algotrading_v40.labellers.triple_barrier as ltb
+import algotrading_v40.trading_time_elapsed_calculators.with_overnight_gaps_only as ttec_wogo
 
 
 def calc_ret(v0: float, v1: float) -> float:
@@ -31,10 +34,17 @@ class TestValidateAndRunTripleBarrier:
     slb = pd.Series([-0.03] * 6, index=index)
     # can't be the length of the series (i.e. 5) as that would make the last
     # vertical barrier the same as the index which is not allowed
-    vb = pd.Series([6] * 6, index=index)
+    vb_tte = pd.Series([6] * 6, index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -62,7 +72,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -81,10 +91,17 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
-    vb = pd.Series([6] * 6, index=index)
+    vb_tte = pd.Series([6] * 6, index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -112,7 +129,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -129,10 +146,17 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.03] * 6, index=index)
-    vb = pd.Series([6] * 6, index=index)
+    vb_tte = pd.Series([6] * 6, index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -160,7 +184,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -177,10 +201,17 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
-    vb = pd.Series([6] * 6, index=index)
+    vb_tte = pd.Series([6] * 6, index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -208,7 +239,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -225,10 +256,17 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.05] * 6, index=index)
     slb = pd.Series([-0.01] * 6, index=index)
-    vb = pd.Series([3, 3, 9, 5, 7, 7], index=index)
+    vb_tte = pd.Series([3, 2, 7, 2, 3, 2], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -256,7 +294,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -273,10 +311,17 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1] * 6, index=index)
     tpb = pd.Series([0.01] * 6, index=index)
     slb = pd.Series([-0.05] * 6, index=index)
-    vb = pd.Series([3, 3, 3, 5, 7, 6], index=index)
+    vb_tte = pd.Series([3, 2, 1, 2, 3, 1], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1] * 6, index=index)
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -304,7 +349,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -321,11 +366,18 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
-    vb = pd.Series([5] * 5, index=index)
+    vb_tte = pd.Series([5, 4, 3, 2, 1], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -352,7 +404,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -369,11 +421,18 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1, 1, 0, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
-    vb = pd.Series([5] * 5, index=index)
+    vb_tte = pd.Series([5, 4, 3, 2, 1], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -400,7 +459,7 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
@@ -417,15 +476,27 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1, 1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.05] * 5, index=index)
     slb = pd.Series([-0.03] * 5, index=index)
-    vb = pd.Series([4, 4, 2, 4, 4], index=index)
+    vb_tte = pd.Series([4, 3, 0, 1, 0], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([-1, -1, 1, 1, -1], index=index, dtype="Int64")
 
-    with pytest.raises(
-      ValueError, match="All vertical barriers must be greater than their index"
-    ):
-      _ = ltb.triple_barrier(
-        prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
-      )
+    result = ltb.triple_barrier(
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
+    )
+    #                                    tpha  slha  vbha  first_touch_at  first_touch_type  first_touch_raw_return
+    # date
+    # 2023-01-02 03:45:59.999000+00:00     1     2     4               1                 1           -0.060000
+    # 2023-01-02 03:46:59.999000+00:00  <NA>     2     4               2                -1            0.106383
+    # 2023-01-02 03:47:59.999000+00:00     3     4     2               2                 0            0.000000
+    # 2023-01-02 03:48:59.999000+00:00  <NA>     4     4               4                -1           -0.181818
+    # 2023-01-02 03:49:59.999000+00:00  <NA>  <NA>     4               4                 0            0.000000
+    assert result["vbha"].to_list() == [4, 4, 2, 4, 4]
 
   def test_variable_barriers(self):
     index = self._create_datetime_index(4)
@@ -437,11 +508,18 @@ class TestValidateAndRunTripleBarrier:
     selected = pd.Series([1, 1, 1, 1], index=index, dtype="Int64")
     tpb = pd.Series([0.04, 0.03, 0.06, 0.05], index=index)
     slb = pd.Series([-0.02, -0.01, -0.03, -0.05], index=index)
-    vb = pd.Series([4] * 4, index=index)
+    vb_tte = pd.Series([4, 3, 2, 1], index=index)
+    tte = ttec_wogo.with_overnight_gaps_only(index, 0)
     side = pd.Series([1] * 4, index=index, dtype="Int64")
 
     result = ltb.triple_barrier(
-      prices=prices, selected=selected, tpb=tpb, slb=slb, vb=vb, side=side
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
     )
     #                                   tpha  slha  vbha  first_touch_at  first_touch_type
     # date
@@ -467,10 +545,70 @@ class TestValidateAndRunTripleBarrier:
         "first_touch_type": "Int32",
       }
     )
-    expected["first_touch_return"] = expected.apply(
+    expected["first_touch_raw_return"] = expected.apply(
       lambda row: calc_ret(prices.loc[row.name], prices.iloc[row["first_touch_at"]])
       if pd.notna(row["first_touch_at"])
       else np.nan,
       axis=1,
     ).astype("float32")
     pd.testing.assert_frame_equal(result, expected)
+
+  def test_vertical_barrier_with_overnight_gap(self):
+    CURR_DAY = dt.date(2025, 9, 15)
+    NEXT_DAY = dt.date(2025, 9, 18)
+
+    def _market_ts(minutes_after_open: int, day: dt.date) -> pd.Timestamp:
+      """
+      Convenience: return a Timestamp <minutes_after_open> minutes after the
+      first (minute-bar-close) timestamp of the trading session, in UTC.
+      """
+      base = pd.Timestamp.combine(
+        day, ctnts.INDIAN_MARKET_FIRST_MINUTE_BAR_CLOSE_TIMESTAMP_UTC
+      ).tz_localize("UTC")
+      border = pd.Timestamp.combine(
+        day, ctnts.INDIAN_MARKET_LAST_MINUTE_BAR_CLOSE_TIMESTAMP_UTC
+      ).tz_localize("UTC")
+      result = base + pd.Timedelta(minutes=minutes_after_open)
+      if result > border:
+        raise ValueError(f"minutes_after_open {minutes_after_open} is too large")
+      return result
+
+    index = pd.DatetimeIndex(
+      [
+        _market_ts(2, CURR_DAY),
+        _market_ts(373, CURR_DAY),
+        _market_ts(374, CURR_DAY),
+        _market_ts(4, NEXT_DAY),
+        _market_ts(5, NEXT_DAY),
+        _market_ts(14, NEXT_DAY),
+      ]
+    )
+    prices = pd.Series(
+      [100, 103, 95, 97, 101, 102],
+      index=index,
+    )
+    selected = pd.Series([1, 1, 1, 1, 1, 1], index=index, dtype="Int64")
+    tpb = pd.Series([0.04, 0.03, 0.06, 0.05, 0.02, 0.01], index=index)
+    slb = pd.Series([-0.02, -0.01, -0.03, -0.05, -0.01, -0.02], index=index)
+    vb_tte = pd.Series([372, 6, 6, 11, 8, 0], index=index)
+    # overnight_gap_minutes is 1065 minutes for standard Indian-market timings
+    tte = ttec_wogo.with_overnight_gaps_only(index, overnight_gap_minutes=1065)
+    side = pd.Series([1] * 6, index=index, dtype="Int64")
+
+    result = ltb.triple_barrier(
+      prices=prices,
+      selected=selected,
+      tpb=tpb,
+      slb=slb,
+      vb_tte=vb_tte,
+      tte=tte,
+      side=side,
+    )
+    #                                    tpha  slha  vbha  first_touch_at  first_touch_type  first_touch_raw_return
+    # 2025-09-15 03:47:59.999000+00:00  <NA>     2     2               2                -1           -0.050000
+    # 2025-09-15 09:58:59.999000+00:00  <NA>     2     3               2                -1           -0.077670
+    # 2025-09-15 09:59:59.999000+00:00     4  <NA>     4               4                 1            0.063158
+    # 2025-09-18 03:49:59.999000+00:00     5  <NA>  <NA>               5                 1            0.051546
+    # 2025-09-18 03:50:59.999000+00:00  <NA>  <NA>     5               5                 0            0.009901
+    # 2025-09-18 03:59:59.999000+00:00  <NA>  <NA>     5               5                 0            0.000000
+    np.testing.assert_array_equal(result["vbha"].to_numpy(), [2, 3, 4, np.nan, 5, 5])
