@@ -438,6 +438,44 @@ class TestCalculateFeaturesWithCompleteCoverage:
     # THIS TEST CASE IS ENGINEERED TO BE STREAM UNSAFE
     assert not bsr.dfs_match
 
+  def test_two_f_calcs_matches_individual_results(self):
+    """When two f_calcs are supplied together, their combined output should be
+    identical to the column-wise concat of running each f_calc separately."""
+
+    def _f_calc_1(df: pd.DataFrame) -> pd.DataFrame:
+      dfr = pd.DataFrame(index=df.index, columns=["close_squared"])
+      dfr["close_squared"] = df["close"].shift(1).pow(2)
+      return dfr
+
+    def _f_calc_2(df: pd.DataFrame) -> pd.DataFrame:
+      dfr = pd.DataFrame(index=df.index, columns=["open_plus_close"])
+      dfr["open_plus_close"] = df["open"] + df["close"]
+      return dfr
+
+    df = _get_test_df()
+    group_size_minutes = 3
+
+    # Combined run (both f_calcs at once)
+    with u_t.expect_no_mutation(df):
+      result_combined = fc_utils.calculate_features_with_complete_coverage(
+        df=df,
+        f_calc=[_f_calc_1, _f_calc_2],
+        group_size_minutes=group_size_minutes,
+      )
+
+    # Individual runs concatenated
+    with u_t.expect_no_mutation(df):
+      result_1 = fc_utils.calculate_features_with_complete_coverage(
+        df=df, f_calc=_f_calc_1, group_size_minutes=group_size_minutes
+      )
+    with u_t.expect_no_mutation(df):
+      result_2 = fc_utils.calculate_features_with_complete_coverage(
+        df=df, f_calc=_f_calc_2, group_size_minutes=group_size_minutes
+      )
+    expected = pd.concat([result_1, result_2], axis=1)
+
+    pd.testing.assert_frame_equal(result_combined, expected)
+
 
 class TestCalculateFeaturesWithLastValueGuaranteed:
   def test_last_value_matches_complete_coverage(self):

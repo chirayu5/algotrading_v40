@@ -48,19 +48,20 @@ def calculate_features_with_last_value_guaranteed(
 
 def calculate_features_with_complete_coverage(
   df: pd.DataFrame,
-  f_calc: Callable[[pd.DataFrame], pd.DataFrame],
+  f_calc: Callable[[pd.DataFrame], pd.DataFrame]
+  | list[Callable[[pd.DataFrame], pd.DataFrame]],
   group_size_minutes: int,
 ):
   """
   Resample df to group_size_minutes and calculate feature values.
   Doing this naively will result in nans littered throughout the df.
   This function avoids this by computing all possible resamplings of the df,
-  applying f_calc on each and stitching the results so that each original row receives a value.
+  applying all supplied f_calcs on each and stitching the results so that
+  each original row receives a value.
 
   NaNs will appear at the start of the df only.
   It converts good values before any nan to nans.
   """
-
   results = []
   all_offsets = []
 
