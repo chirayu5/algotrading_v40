@@ -158,6 +158,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 5
     assert result.good_values_mask.equals(pd.Series([True, True, True, True, True]))
     assert result.n_values == 5
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_series_with_zeros_different_representations(self):
     s = pd.Series([1.0, 0.0, 0, -0.0, -0, 2.0])
@@ -174,6 +177,9 @@ class TestAnalyseNumericSeriesQuality:
       pd.Series([True, True, True, True, True, True])
     )
     assert result.n_values == 6
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_series_with_negatives(self):
     s = pd.Series([1.0, -2.0, 3.0, -4.5, -0, -0.0, -np.inf, -np.nan, 5.0])
@@ -192,6 +198,9 @@ class TestAnalyseNumericSeriesQuality:
       pd.Series([True, True, True, True, True, True, False, False, True])
     )
     assert result.n_values == 9
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_nan_values(self):
     s = pd.Series([1.0, np.nan, 3.0, np.nan, 5.0])
@@ -206,6 +215,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 3
     assert result.good_values_mask.equals(pd.Series([True, False, True, False, True]))
     assert result.n_values == 5
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_inf_values(self):
     s = pd.Series([1.0, np.inf, 3.0, -np.inf, 5.0])
@@ -220,6 +232,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 3
     assert result.good_values_mask.equals(pd.Series([True, False, True, False, True]))
     assert result.n_values == 5
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_mixed_bad_values(self):
     s = pd.Series([1.0, np.nan, 3.0, np.inf, -np.inf, 5.0, None])
@@ -239,6 +254,9 @@ class TestAnalyseNumericSeriesQuality:
     assert s.loc[result.good_values_mask].equals(
       pd.Series([1.0, 3.0, 5.0], index=[0, 2, 5])
     )
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_bad_values_at_start(self):
     s = pd.Series([np.nan, np.inf, 1.0, 2.0, 3.0])
@@ -253,6 +271,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 3
     assert result.good_values_mask.equals(pd.Series([False, False, True, True, True]))
     assert result.n_values == 5
+    assert result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_bad_values_at_end(self):
     s = pd.Series([1.0, 2.0, 3.0, np.nan, np.inf])
@@ -267,6 +288,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 3
     assert result.good_values_mask.equals(pd.Series([True, True, True, False, False]))
     assert result.n_values == 5
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_series_with_bad_values_at_both_ends(self):
     s = pd.Series([np.nan, np.inf, 1.0, 2.0, 3.0, -np.inf, np.nan])
@@ -283,6 +307,9 @@ class TestAnalyseNumericSeriesQuality:
       pd.Series([False, False, True, True, True, False, False])
     )
     assert result.n_values == 7
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_series_with_bad_values_in_middle(self):
     s = pd.Series([1.0, 2.0, np.nan, np.inf, 3.0, 4.0])
@@ -299,6 +326,9 @@ class TestAnalyseNumericSeriesQuality:
       pd.Series([True, True, False, False, True, True])
     )
     assert result.n_values == 6
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
 
   def test_all_bad_values(self):
     s = pd.Series([np.nan, np.inf, -np.inf, np.nan])
@@ -313,6 +343,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 0
     assert result.good_values_mask.equals(pd.Series([False, False, False, False]))
     assert result.n_values == 4
+    assert result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_empty_series(self):
     s = pd.Series([], dtype=float)
@@ -327,6 +360,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 0
     assert result.good_values_mask.equals(pd.Series([], dtype=bool))
     assert result.n_values == 0
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_single_good_value(self):
     s = pd.Series([42.5])
@@ -341,6 +377,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 1
     assert result.good_values_mask.equals(pd.Series([True]))
     assert result.n_values == 1
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_single_bad_value(self):
     s = pd.Series([np.nan])
@@ -355,6 +394,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 0
     assert result.good_values_mask.equals(pd.Series([False]))
     assert result.n_values == 1
+    assert result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_single_zero_value(self):
     s = pd.Series([0.0])
@@ -369,6 +411,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 1
     assert result.good_values_mask.equals(pd.Series([True]))
     assert result.n_values == 1
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_single_negative_value(self):
     s = pd.Series([-5.0])
@@ -383,6 +428,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 1
     assert result.good_values_mask.equals(pd.Series([True]))
     assert result.n_values == 1
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_complex_mixed_case_with_result_dtypes(self):
     # Test with bad values at start/end, zeros, negatives, and good values
@@ -412,6 +460,10 @@ class TestAnalyseNumericSeriesQuality:
     assert isinstance(result.n_bad_values_at_start, int)
     assert isinstance(result.n_bad_values_at_end, int)
 
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
+
   def test_integer_series(self):
     s = pd.Series([1, 2, -3, 0, 5], dtype=int)
     sb = s.copy()
@@ -425,6 +477,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 5
     assert result.good_values_mask.equals(pd.Series([True, True, True, True, True]))
     assert result.n_values == 5
+    assert not result.has_bad_values
+    assert not result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_float32_series(self):
     s = pd.Series([1.0, -2.0, 0.0, np.nan], dtype=np.float32)
@@ -439,6 +494,9 @@ class TestAnalyseNumericSeriesQuality:
     assert result.n_good_values == 3
     assert result.good_values_mask.equals(pd.Series([True, True, True, False]))
     assert result.n_values == 4
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert not result.has_bad_values_apart_from_end
 
   def test_non_numeric_series_raises_error(self):
     s = pd.Series(["a", "b", "c"])
@@ -515,6 +573,124 @@ class TestAnalyseNumericSeriesQuality:
         [1.0, 3.0], index=[pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-03")]
       )
     )
+    assert result.has_bad_values
+    assert result.has_bad_values_apart_from_start
+    assert result.has_bad_values_apart_from_end
+
+
+class TestValidators:
+  """Tests for data quality validator functions."""
+
+  class TestCheckIndicesMatch:
+    def test_matching_indices_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s1 = pd.Series([1, 2, 3], index=idx)
+      s2 = pd.Series([4, 5, 6], index=idx)
+      udf.check_indices_match(s1, s2)
+
+    def test_mismatched_indices_fails(self):
+      idx1 = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      idx2 = pd.DatetimeIndex(["2020-01-01", "2020-01-02", "2020-01-04"], tz="UTC")
+      s1 = pd.Series([1, 2, 3], index=idx1)
+      s2 = pd.Series([4, 5, 6], index=idx2)
+      with pytest.raises(ValueError, match="Series at position 1"):
+        udf.check_indices_match(s1, s2)
+
+  class TestCheckIndexUAndMi:
+    def test_valid_index_passes(self):
+      idx = pd.date_range("2020-01-01", periods=4, tz="UTC")
+      udf.check_index_u_and_mi(idx)
+
+    def test_non_unique_fails(self):
+      idx = pd.DatetimeIndex(
+        ["2020-01-01", "2020-01-02", "2020-01-02", "2020-01-03"], tz="UTC"
+      )
+      with pytest.raises(ValueError, match="Index must be unique"):
+        udf.check_index_u_and_mi(idx)
+
+    def test_non_monotonic_fails(self):
+      idx = pd.DatetimeIndex(
+        ["2020-01-01", "2020-01-03", "2020-01-02", "2020-01-04"], tz="UTC"
+      )
+      with pytest.raises(ValueError, match="Index must be monotonically increasing"):
+        udf.check_index_u_and_mi(idx)
+
+  class TestCheckNoBadValues:
+    def test_clean_series_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, 2.0, 3.0], index=idx)
+      udf.check_no_bad_values(s)
+
+    def test_series_with_nan_fails(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, np.nan, 3.0], index=idx)
+      with pytest.raises(ValueError, match="bad values"):
+        udf.check_no_bad_values(s)
+
+  class TestCheckNoBadValuesApartFromStart:
+    def test_bad_values_at_start_only_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([np.nan, 1.0, 2.0], index=idx)
+      udf.check_no_bad_values_apart_from_start(s)
+
+    def test_bad_values_in_middle_fails(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, np.nan, 3.0], index=idx)
+      with pytest.raises(ValueError, match="apart from the start"):
+        udf.check_no_bad_values_apart_from_start(s)
+
+  class TestCheckAllGt0:
+    def test_all_positive_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, 2.0, 3.0], index=idx)
+      udf.check_all_gt0(s)
+
+    def test_zero_value_fails(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, 0.0, 3.0], index=idx)
+      with pytest.raises(ValueError, match="values that are <= 0"):
+        udf.check_all_gt0(s)
+
+  class TestCheckAllGte0:
+    def test_non_negative_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([0.0, 1.0, 2.0], index=idx)
+      udf.check_all_gte0(s)
+
+    def test_negative_value_fails(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, -1.0, 3.0], index=idx)
+      with pytest.raises(ValueError, match="values that are < 0"):
+        udf.check_all_gte0(s)
+
+  class TestCheckAllLt0:
+    def test_all_negative_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([-1.0, -2.0, -3.0], index=idx)
+      udf.check_all_lt0(s)
+
+    def test_positive_value_fails(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([-1.0, 1.0, -3.0], index=idx)
+      with pytest.raises(ValueError, match="values that are >= 0"):
+        udf.check_all_lt0(s)
+      del s
+
+      s = pd.Series([-1.0, 0.0, -3.0], index=idx)
+      with pytest.raises(ValueError, match="values that are >= 0"):
+        udf.check_all_lt0(s)
+
+  class TestCheckAllIn:
+    def test_all_values_in_set_passes(self):
+      idx = pd.date_range("2020-01-01", periods=3, tz="UTC")
+      s = pd.Series([1.0, 2.0, 3.0], index=idx)
+      udf.check_all_in(s, (1.0, 2.0, 3.0))
+
+    def test_value_not_in_set_fails(self):
+      idx = pd.date_range("2020-01-01", periods=2, tz="UTC")
+      s = pd.Series([1.0, 4.0], index=idx)
+      with pytest.raises(ValueError, match="values not in"):
+        udf.check_all_in(s, (1.0, 2.0, 3.0))
 
 
 class TestAnalyseNumericColumnsQuality:
@@ -891,6 +1067,14 @@ class TestGroupByBarGroup:
 
 class TestCalculateGroupedValues:
   def test_basic_functionality(self):
+    index = pd.DatetimeIndex(
+      [
+        "2021-01-01 03:45:59.999+00:00",
+        "2021-01-01 03:46:29.999+00:00",
+        "2021-01-01 03:46:59.999+00:00",
+        "2021-01-01 03:47:29.999+00:00",
+      ]
+    )
     df = pd.DataFrame(
       {
         "open": [100, 101, 102, 103],
@@ -905,14 +1089,7 @@ class TestCalculateGroupedValues:
           pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
         ],
       },
-      index=pd.DatetimeIndex(
-        [
-          "2021-01-01 03:45:59.999+00:00",
-          "2021-01-01 03:46:29.999+00:00",
-          "2021-01-01 03:46:59.999+00:00",
-          "2021-01-01 03:47:29.999+00:00",
-        ]
-      ),
+      index=index,
     )
 
     def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
@@ -937,14 +1114,7 @@ class TestCalculateGroupedValues:
         "close": [np.nan, np.nan, 212.0, np.nan],
         "volume": [np.nan, np.nan, 4600.0, np.nan],
       },
-      index=pd.DatetimeIndex(
-        [
-          "2021-01-01 03:45:59.999+00:00",
-          "2021-01-01 03:46:29.999+00:00",
-          "2021-01-01 03:46:59.999+00:00",
-          "2021-01-01 03:47:29.999+00:00",
-        ]
-      ),
+      index=index,
     )
 
     pd.testing.assert_frame_equal(result, expected)
@@ -963,6 +1133,96 @@ class TestCalculateGroupedValues:
       result = udf.calculate_grouped_values(df, compute_func)
 
     pd.testing.assert_frame_equal(result, 2 * df.drop(columns=["bar_group"]))
+
+  def test_multiple_compute_functions(self):
+    index = pd.DatetimeIndex(
+      [
+        "2021-01-01 03:45:59.999+00:00",
+        "2021-01-01 03:46:29.999+00:00",
+        "2021-01-01 03:46:59.999+00:00",
+        "2021-01-01 03:47:29.999+00:00",
+      ]
+    )
+    df = pd.DataFrame(
+      {
+        "open": [100, 101, 102, 103],
+        "high": [105, 106, 107, 108],
+        "low": [95, 96, 97, 98],
+        "close": [104, 105, 106, 107],
+        "volume": [1000, 1100, 1200, 1300],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        ],
+      },
+      index=index,
+    )
+
+    # First function: compute sum of open + close
+    def compute_func1(df_: pd.DataFrame) -> pd.DataFrame:
+      return pd.DataFrame(
+        {"sum_open_close": df_["open"] + df_["close"]},
+        index=df_.index,
+      )
+
+    # Second function: compute ratio of high / low
+    def compute_func2(df_: pd.DataFrame) -> pd.DataFrame:
+      return pd.DataFrame(
+        {"ratio_high_low": df_["high"] / df_["low"]},
+        index=df_.index,
+      )
+
+    with ut.expect_no_mutation(df):
+      result = udf.calculate_grouped_values(df, [compute_func1, compute_func2])
+
+    # Expected calculation:
+    # see point 1 and 2 in test_basic_functionality
+    expected = pd.DataFrame(
+      {
+        "sum_open_close": [205.0, np.nan, 209.0, np.nan],
+        "ratio_high_low": [106.0 / 95.0, np.nan, 108.0 / 97.0, np.nan],
+      },
+      index=index,
+    )
+
+    pd.testing.assert_frame_equal(result, expected)
+
+  def test_multiple_compute_functions_with_duplicate_columns_raises_error(self):
+    index = pd.DatetimeIndex(
+      [
+        "2021-01-01 03:45:59.999+00:00",
+        "2021-01-01 03:46:59.999+00:00",
+      ]
+    )
+    df = pd.DataFrame(
+      {
+        "open": [100, 101],
+        "high": [105, 106],
+        "low": [95, 96],
+        "close": [104, 105],
+        "volume": [1000, 1100],
+        "bar_group": [
+          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        ],
+      },
+      index=index,
+    )
+
+    # Both functions return a column with the same name
+    def compute_func1(df_: pd.DataFrame) -> pd.DataFrame:
+      return pd.DataFrame({"result": df_["open"] * 2}, index=df_.index)
+
+    def compute_func2(df_: pd.DataFrame) -> pd.DataFrame:
+      return pd.DataFrame({"result": df_["close"] * 3}, index=df_.index)
+
+    with pytest.raises(
+      ValueError,
+      match="Duplicate columns found across compute functions: \\['result'\\]",
+    ):
+      udf.calculate_grouped_values(df, [compute_func1, compute_func2])
 
   def test_empty_dataframe(self):
     # the actual data does not matter as we do [:0] on the dataframe to get an empty dataframe

@@ -1,4 +1,5 @@
 import dataclasses
+from collections import Counter
 from typing import Callable
 
 import numpy as np
@@ -36,6 +37,18 @@ class AnalyseSeriesQualityResult:
   @property
   def n_good_values(self) -> int:
     return int(self.good_values_mask.sum())
+
+  @property
+  def has_bad_values(self) -> bool:
+    return self.n_bad_values > 0
+
+  @property
+  def has_bad_values_apart_from_start(self) -> bool:
+    return self.n_bad_values_at_start != self.n_bad_values
+
+  @property
+  def has_bad_values_apart_from_end(self) -> bool:
+    return self.n_bad_values_at_end != self.n_bad_values
 
 
 def analyse_numeric_series_quality(s: pd.Series) -> AnalyseSeriesQualityResult:
@@ -99,6 +112,140 @@ def get_most_common_index_delta(
   )
 
 
+############# DATA QUALITY VALIDATORS ##############
+def check_indices_match(*series: pd.Series) -> None:
+  """Check that all series have the same index."""
+  if len(series) == 0:
+    return
+
+  first_index = series[0].index
+  for i, s in enumerate(series[1:], start=1):
+    if not first_index.equals(s.index):
+      raise ValueError(
+        f"Series at position {i} has different index than series at position 0"
+      )
+
+
+def check_index_u_and_mi(index: pd.Index) -> None:
+  """Check that index is unique and monotonically increasing."""
+  # Check uniqueness - vectorized
+  if not index.is_unique:
+    raise ValueError("Index must be unique")
+
+  # Check monotonic increasing - vectorized
+  if not index.is_monotonic_increasing:
+    raise ValueError("Index must be monotonically increasing")
+
+
+def check_no_bad_values(*series: pd.Series) -> None:
+  """Check that all series have no bad values (NaN, inf)."""
+  for i, s in enumerate(series):
+    result = analyse_numeric_series_quality(s)
+    if result.has_bad_values:
+      raise ValueError(
+        f"Series at position {i} has {result.n_bad_values} bad values "
+        f"(NaN or inf) out of {result.n_values} total values"
+      )
+
+
+def check_no_bad_values_apart_from_start(*series: pd.Series) -> None:
+  """Check that all series have no bad values except at the start."""
+  for i, s in enumerate(series):
+    result = analyse_numeric_series_quality(s)
+    if result.has_bad_values_apart_from_start:
+      n_bad_apart_from_start = result.n_bad_values - result.n_bad_values_at_start
+      raise ValueError(
+        f"Series at position {i} has {n_bad_apart_from_start} bad values "
+        f"(NaN or inf) apart from the start out of {result.n_values} total values"
+      )
+
+
+def check_all_gt0(*series: pd.Series) -> None:
+  """Check that ALL values in all series are greater than 0. Throws if bad values present."""
+  for i, s in enumerate(series):
+    result = analyse_numeric_series_quality(s)
+
+    # First check for bad values
+    if result.has_bad_values:
+      raise ValueError(
+        f"Series at position {i} has {result.n_bad_values} bad values "
+        f"(NaN or inf) out of {result.n_values} total values"
+      )
+
+    # Then check all values are > 0 (vectorized)
+    arr = s.to_numpy()
+    if not np.all(arr > 0):
+      n_violations = np.sum(arr <= 0)
+      raise ValueError(
+        f"Series at position {i} has {n_violations} values that are <= 0"
+      )
+
+
+def check_all_gte0(*series: pd.Series) -> None:
+  """Check that ALL values in all series are >= 0. Throws if bad values present."""
+  for i, s in enumerate(series):
+    result = analyse_numeric_series_quality(s)
+
+    # First check for bad values
+    if result.has_bad_values:
+      raise ValueError(
+        f"Series at position {i} has {result.n_bad_values} bad values "
+        f"(NaN or inf) out of {result.n_values} total values"
+      )
+
+    # Then check all values are >= 0 (vectorized)
+    arr = s.to_numpy()
+    if not np.all(arr >= 0):
+      n_violations = np.sum(arr < 0)
+      raise ValueError(f"Series at position {i} has {n_violations} values that are < 0")
+
+
+def check_all_lt0(*series: pd.Series) -> None:
+  """Check that ALL values in all series are < 0. Throws if bad values present."""
+  for i, s in enumerate(series):
+    result = analyse_numeric_series_quality(s)
+
+    # First check for bad values
+    if result.has_bad_values:
+      raise ValueError(
+        f"Series at position {i} has {result.n_bad_values} bad values "
+        f"(NaN or inf) out of {result.n_values} total values"
+      )
+
+    # Then check all values are < 0 (vectorized)
+    arr = s.to_numpy()
+    if not np.all(arr < 0):
+      n_violations = np.sum(arr >= 0)
+      raise ValueError(
+        f"Series at position {i} has {n_violations} values that are >= 0"
+      )
+
+
+def check_all_in(series: pd.Series, values: tuple) -> None:
+  """Check that ALL values in series are in the given set. Throws if bad values present."""
+  result = analyse_numeric_series_quality(series)
+
+  # First check for bad values
+  if result.has_bad_values:
+    raise ValueError(
+      f"Series has {result.n_bad_values} bad values "
+      f"(NaN or inf) out of {result.n_values} total values"
+    )
+
+  # Then check all values are in the allowed set (vectorized)
+  arr = series.to_numpy()
+  values_array = np.array(values)
+  if not np.all(np.isin(arr, values_array)):
+    n_violations = np.sum(~np.isin(arr, values_array))
+    unique_bad = np.unique(arr[~np.isin(arr, values_array)])
+    raise ValueError(
+      f"Series has {n_violations} values not in {values}. "
+      f"Found unexpected values: {unique_bad.tolist()}"
+    )
+
+
+#################################################
+
 ############## GROUPING BY BAR GROUP ##############
 # Allows working with x minute bars instead of only 1 minute bars
 # Also allows using dollar bars
@@ -132,7 +279,50 @@ def group_by_bar_group(df: pd.DataFrame) -> GroupByBarGroupResult:
 
 def calculate_grouped_values(
   df: pd.DataFrame,
-  compute_func: Callable[[pd.DataFrame], pd.DataFrame],
+  compute_func: Callable[[pd.DataFrame], pd.DataFrame]
+  | list[Callable[[pd.DataFrame], pd.DataFrame]],
 ) -> pd.DataFrame:
+  """Calculate grouped values using one or more compute functions.
+
+  Args:
+    df: DataFrame with a 'bar_group' column
+    compute_func: Either a single callable or a list of callables.
+                  Each callable takes a grouped DataFrame and returns a DataFrame.
+
+  Returns:
+    DataFrame with all computed columns. When multiple functions are provided,
+    results are concatenated into a single DataFrame.
+
+  Raises:
+    ValueError: If functions return DataFrames with overlapping column names.
+
+  Examples:
+    # Single function (backward compatible)
+    result = calculate_grouped_values(df, my_compute_func)
+
+    # Multiple functions (efficient - groups only once)
+    result = calculate_grouped_values(df, [
+      compute_func1,
+      compute_func2,
+      compute_func3,
+    ])
+  """
   dfg = group_by_bar_group(df)
-  return compute_func(dfg.df).reindex(df.index)
+  if not isinstance(compute_func, list):
+    compute_func = [compute_func]
+  if len(compute_func) == 0:
+    raise ValueError("compute_func list cannot be empty")
+
+  results = [func(dfg.df).reindex(df.index) for func in compute_func]
+
+  all_columns = []
+  for result in results:
+    all_columns.extend(result.columns.tolist())
+
+  if len(all_columns) != len(set(all_columns)):
+    column_counts = Counter(all_columns)
+    duplicates = [col for col, count in column_counts.items() if count > 1]
+    raise ValueError(f"Duplicate columns found across compute functions: {duplicates}")
+
+  # Concatenate all results (indices are guaranteed to be equal due to reindex)
+  return pd.concat(results, axis=1)
