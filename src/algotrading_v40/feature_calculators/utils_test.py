@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import algotrading_v40.feature_calculators.detrended_rsi as fc_drsi
 import algotrading_v40.feature_calculators.utils as fc_utils
@@ -47,6 +48,19 @@ def _get_test_df() -> pd.DataFrame:
   )
   df.index.name = "bar_close_timestamp"
   return df
+
+
+def _f_calc_with_initial_nans_2(df: pd.DataFrame):
+  ob = df.loc[df.index[-1], "open"]
+  df.loc[df.index[-1], :] = np.nan
+  df.loc[df.index[-1], "open"] = ob
+  dfr = pd.DataFrame(
+    index=df.index, columns=["close_squared", "high_cubed", "open_sqrt"]
+  )
+  dfr["close_squared"] = df["close"].shift(1).pow(2)
+  dfr["high_cubed"] = df["high"].shift(1).pow(3)
+  dfr["open_sqrt"] = df["open"].pow(0.5)
+  return dfr
 
 
 class TestCalculateFeaturesWithCompleteCoverage:
@@ -178,19 +192,8 @@ class TestCalculateFeaturesWithCompleteCoverage:
   #   # THIS TEST CASE IS ENGINEERED TO BE STREAM UNSAFE
   #   assert not bsr.dfs_match
 
-  def test_against_handcrafted_logic(self):
-    def _f_calc_with_initial_nans_2(df: pd.DataFrame):
-      ob = df.loc[df.index[-1], "open"]
-      df.loc[df.index[-1], :] = np.nan
-      df.loc[df.index[-1], "open"] = ob
-      dfr = pd.DataFrame(
-        index=df.index, columns=["close_squared", "high_cubed", "open_sqrt"]
-      )
-      dfr["close_squared"] = df["close"].shift(1).pow(2)
-      dfr["high_cubed"] = df["high"].shift(1).pow(3)
-      dfr["open_sqrt"] = df["open"].pow(0.5)
-      return dfr
-
+  @pytest.mark.parametrize("n_jobs", [None, -1])
+  def test_against_handcrafted_logic(self, n_jobs):
     # # BAR GROUPINGS WITH OFFSET 0
     #     # BAR GROUPINGS WITH OFFSET 0
     #     "2023-01-02 03:46:59.999000+00:00",  # 0
@@ -329,7 +332,10 @@ class TestCalculateFeaturesWithCompleteCoverage:
     group_size_minutes = 3
     with u_t.expect_no_mutation(df):
       result_df = fc_utils.calculate_features_with_complete_coverage(
-        df=df, f_calc=_f_calc_with_initial_nans_2, group_size_minutes=group_size_minutes
+        df=df,
+        f_calc=_f_calc_with_initial_nans_2,
+        group_size_minutes=group_size_minutes,
+        n_jobs=n_jobs,
       )
 
     pd.testing.assert_series_equal(result_df.iloc[0], dfg0_r.iloc[0])
@@ -342,18 +348,6 @@ class TestCalculateFeaturesWithCompleteCoverage:
     pd.testing.assert_series_equal(result_df.iloc[7], dfg0_r.iloc[4])
 
   def test_streaming_matches_batch(self):
-    def _f_calc_with_initial_nans_2(df: pd.DataFrame):
-      ob = df.loc[df.index[-1], "open"]
-      df.loc[df.index[-1], :] = np.nan
-      df.loc[df.index[-1], "open"] = ob
-      dfr = pd.DataFrame(
-        index=df.index, columns=["close_squared", "high_cubed", "open_sqrt"]
-      )
-      dfr["close_squared"] = df["close"].shift(1).pow(2)
-      dfr["high_cubed"] = df["high"].shift(1).pow(3)
-      dfr["open_sqrt"] = df["open"].pow(0.5)
-      return dfr
-
     df = _get_test_df()
     group_size_minutes = 3
     bsr = u_s.compare_batch_and_stream(

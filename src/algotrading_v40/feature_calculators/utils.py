@@ -1,4 +1,5 @@
-from typing import Callable
+import multiprocessing
+from typing import Callable, Tuple
 
 import numpy as np
 import pandas as pd
@@ -7,15 +8,107 @@ import algotrading_v40.bar_groupers.time_based_uniform as bg_tbu
 import algotrading_v40.utils.df as u_df
 
 
+# --------------------------------------------------------------------------- #
+# Shared helpers                                                              #
+# --------------------------------------------------------------------------- #
+def _prepare_and_compute(
+  *,
+  df: pd.DataFrame,
+  f_calc: Callable[[pd.DataFrame], pd.DataFrame]
+  | list[Callable[[pd.DataFrame], pd.DataFrame]],
+  group_size_minutes: int,
+  offset_minutes: int,
+  copy_df: bool = False,
+) -> Tuple[pd.DataFrame, np.ndarray]:
+  """
+  Common routine used by all public helpers and worker processes.
+
+  1. Compute bar-grouping & offsets for the given *offset_minutes*.
+  2. Attach the two helper columns (`bar_group`, `offset`).
+  3. Call the supplied *f_calc* (or list of them) via
+     `u_df.calculate_grouped_values`.
+  4. Return `(result_dataframe, offsets_ndarray)`
+
+  Parameters
+  ----------
+  copy_df
+      • True  – work on a copy (safe for multiprocessing and for callers
+        that do not want their frame mutated).
+      • False – mutate in-place (used only when already inside a copy).
+  """
+  tbubg_result = bg_tbu.get_time_based_uniform_bar_group_for_indian_market(
+    df=df,
+    group_size_minutes=group_size_minutes,
+    offset_minutes=offset_minutes,
+  )
+
+  target_df = df.copy() if copy_df else df
+  with pd.option_context("mode.chained_assignment", None):
+    target_df["bar_group"] = tbubg_result.bar_groups
+    target_df["offset"] = tbubg_result.offsets
+    result = u_df.calculate_grouped_values(df=target_df, compute_func=f_calc)
+    if not copy_df:
+      df.drop(columns=["bar_group", "offset"], inplace=True)
+
+  return result, tbubg_result.offsets.values
+
+
+def _calc_features_for_offset(
+  args: Tuple[
+    pd.DataFrame,
+    Callable[[pd.DataFrame], pd.DataFrame]
+    | list[Callable[[pd.DataFrame], pd.DataFrame]],
+    int,
+    int,
+  ],
+) -> Tuple[pd.DataFrame, np.ndarray]:
+  """Thin wrapper so that Pool.map can pickle the call."""
+  df, f_calc, group_size_minutes, offset_minutes, copy_df = args
+  # Work on a *copy* because multiple processes will access the same df.
+  return _prepare_and_compute(
+    df=df,
+    f_calc=f_calc,
+    group_size_minutes=group_size_minutes,
+    offset_minutes=offset_minutes,
+    copy_df=copy_df,
+  )
+
+
+def _choose_map(
+  n_jobs: int | None,
+):
+  """
+  Decide which mapping function to use (built-in vs Pool.map) and create a
+  pool if necessary.  Returns (map_func, pool_or_None).
+
+  Caller **must** close/join the returned pool when done.
+  """
+  if n_jobs in (None, 1):
+    return map, None
+
+  if n_jobs == -1:
+    n_jobs_effective = multiprocessing.cpu_count()
+  elif n_jobs >= 2:
+    n_jobs_effective = n_jobs
+  else:
+    raise ValueError("n_jobs must be None, 1, -1 or an int ≥ 2")
+
+  pool = multiprocessing.Pool(processes=n_jobs_effective)
+  return pool.map, pool
+
+
+# --------------------------------------------------------------------------- #
+# Public helpers                                                              #
+# --------------------------------------------------------------------------- #
 def calculate_features_with_last_value_guaranteed(
   df: pd.DataFrame,
   f_calc: Callable[[pd.DataFrame], pd.DataFrame],
   group_size_minutes: int,
-):
+) -> pd.DataFrame:
   """
   Calculate features with the last value guaranteed.
 
-  This function trades off speed for coverage. Apart from the last value, the other values can be nans.
+  This function trades off coverage for speed. Apart from the last value, the other values can be nans.
   It will be useful for cases when only the last value is needed.
   Example: Streaming, find_min_data_points_needed_for_stable_good_last_value
 
@@ -32,17 +125,13 @@ def calculate_features_with_last_value_guaranteed(
   # pass offset as last value's offset
   # this ensure last will be the first bar of the resampled df
   # => value will be calculated for it
-  tbubg_result = bg_tbu.get_time_based_uniform_bar_group_for_indian_market(
+  result, _ = _prepare_and_compute(
     df=df,
+    f_calc=f_calc,
     group_size_minutes=group_size_minutes,
-    offset_minutes=last_offset,
+    offset_minutes=int(last_offset),
+    copy_df=False,
   )
-  with pd.option_context("mode.chained_assignment", None):
-    df["bar_group"] = tbubg_result.bar_groups
-    df["offset"] = tbubg_result.offsets
-    result = u_df.calculate_grouped_values(df=df, compute_func=f_calc)
-    df.drop(columns=["bar_group", "offset"], inplace=True)
-
   return result
 
 
@@ -51,7 +140,8 @@ def calculate_features_with_complete_coverage(
   f_calc: Callable[[pd.DataFrame], pd.DataFrame]
   | list[Callable[[pd.DataFrame], pd.DataFrame]],
   group_size_minutes: int,
-):
+  n_jobs: int | None = 1,
+) -> pd.DataFrame:
   """
   Resample df to group_size_minutes and calculate feature values.
   Doing this naively will result in nans littered throughout the df.
@@ -62,23 +152,32 @@ def calculate_features_with_complete_coverage(
   NaNs will appear at the start of the df only.
   It converts good values before any nan to nans.
   """
-  results = []
-  all_offsets = []
+  # ----------------------------------------------------------------------- #
+  # Build argument list: one entry per possible offset                      #
+  # ----------------------------------------------------------------------- #
+  args_iterable = [
+    # the last entry "n_jobs not in (None, 1)" is the copy_df argument.
+    # n_jobs not in (None, 1) is True => parallel execution is happening
+    # => we need to copy the dfs to ensure setting the bar_group and offset
+    # columns for one process does not affect the other processes
+    (df, f_calc, group_size_minutes, offset_minutes, n_jobs not in (None, 1))
+    for offset_minutes in range(group_size_minutes)
+  ]
 
-  for offset_minutes in range(group_size_minutes):
-    tbubg_result = bg_tbu.get_time_based_uniform_bar_group_for_indian_market(
-      df=df,
-      group_size_minutes=group_size_minutes,
-      offset_minutes=offset_minutes,
-    )
-    with pd.option_context("mode.chained_assignment", None):
-      df["bar_group"] = tbubg_result.bar_groups
-      df["offset"] = tbubg_result.offsets
-      results.append(u_df.calculate_grouped_values(df=df, compute_func=f_calc))
-      all_offsets.append(tbubg_result.offsets.values)
-      df.drop(columns=["bar_group", "offset"], inplace=True)
+  # ----------------------------------------------------------------------- #
+  # Execute (serial or parallel)                                            #
+  # ----------------------------------------------------------------------- #
+  map_func, pool = _choose_map(n_jobs)
+  try:
+    mp_out = list(map_func(_calc_features_for_offset, args_iterable))
+  finally:
+    if pool is not None:
+      pool.close()
+      pool.join()
 
-  # Stack all offset arrays into a 2D array (rows=offset_minutes sent as input , cols=offsets returned as output)
+  # Un-zip outputs
+  results, all_offsets = map(list, zip(*mp_out))
+
   offsets_array = np.stack(all_offsets, axis=0)
 
   # Find which iteration has offset=0 for each row
