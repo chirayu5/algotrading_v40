@@ -7,6 +7,7 @@ import pytest
 import algotrading_v40.constants as ctnts
 import algotrading_v40.labellers.triple_barrier as l_tb
 import algotrading_v40.sample_weighers.concurrency_return_age_adjusted as sw_craa
+import algotrading_v40.trading_time_elapsed_calculators.with_overnight_gaps_only as ttec_wogo
 import algotrading_v40.utils.df as u_df
 import algotrading_v40.utils.testing as u_t
 
@@ -464,7 +465,9 @@ class TestConcurrencyReturnAgeAdjustedWeights:
 
     df["selected"] = np.random.randint(0, 2, len(df))
     df["side"] = 1
-    df["vb"] = np.arange(len(df)) + 45
+    df["vb_tte"] = 45
+    # overnight_gap_minutes is 1065 minutes for standard Indian-market timings
+    df["tte"] = ttec_wogo.with_overnight_gaps_only(df.index, overnight_gap_minutes=1065)
 
     df = df.iloc[20:]
 
@@ -474,7 +477,8 @@ class TestConcurrencyReturnAgeAdjustedWeights:
         selected=df["selected"],
         tpb=df["tpb"],
         slb=df["slb"],
-        vb=df["vb"],
+        vb_tte=df["vb_tte"],
+        tte=df["tte"],
         side=df["side"],
       )
     # print(df_tb["first_touch_type"].value_counts(dropna=False))
