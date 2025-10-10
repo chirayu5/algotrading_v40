@@ -877,13 +877,6 @@ class TestGroupByBarGroup:
         "low": [99, 104, 109, 114, 119],
         "close": [101, 106, 111, 116, 121],
         "volume": [1000, 1500, 2000, 2500, 3000],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:49:59.999+00:00"),
-        ],
       },
       index=pd.DatetimeIndex(
         [
@@ -895,9 +888,19 @@ class TestGroupByBarGroup:
         ]
       ),
     )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:49:59.999+00:00"),
+      ],
+      index=df.index,
+    )
 
     with ut.expect_no_mutation(df):
-      result = udf.group_by_bar_group(df)
+      result = udf.group_by_bar_group(df, bar_group)
 
     expected_df = pd.DataFrame(
       {
@@ -926,7 +929,7 @@ class TestGroupByBarGroup:
           "2021-01-01 03:49:59.999+00:00",
         ]
       ),
-    )
+    ).astype("int32")
     expected_size.index.name = "bar_group"
 
     pd.testing.assert_frame_equal(result.df, expected_df)
@@ -940,11 +943,6 @@ class TestGroupByBarGroup:
         "low": [99, 104, 109],
         "close": [101, 106, 111],
         "volume": [1000, 1500, 2000],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-        ],
       },
       index=pd.DatetimeIndex(
         [
@@ -954,9 +952,17 @@ class TestGroupByBarGroup:
         ]
       ),
     )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+      ],
+      index=df.index,
+    )
 
     with ut.expect_no_mutation(df):
-      result = udf.group_by_bar_group(df)
+      result = udf.group_by_bar_group(df, bar_group)
 
     expected_df = pd.DataFrame(
       {
@@ -981,7 +987,7 @@ class TestGroupByBarGroup:
           "2021-01-01 03:45:59.999+00:00",
         ]
       ),
-    )
+    ).astype("int32")
     expected_size.index.name = "bar_group"
 
     pd.testing.assert_frame_equal(result.df, expected_df)
@@ -995,12 +1001,6 @@ class TestGroupByBarGroup:
         "low": [99, 104, 109, 114],
         "close": [101, 106, 111, 116],
         "volume": [1000, 1500, 2000, 2500],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:48:59.999+00:00"),
-        ],
       },
       index=pd.DatetimeIndex(
         [
@@ -1011,9 +1011,18 @@ class TestGroupByBarGroup:
         ]
       ),
     )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:47:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:48:59.999+00:00"),
+      ],
+      index=df.index,
+    )
     with ut.expect_no_mutation(df):
-      result = udf.group_by_bar_group(df)
-      expected_df = df.copy().drop(columns=["bar_group"])
+      result = udf.group_by_bar_group(df, bar_group)
+      expected_df = df.copy()
       expected_df.index.name = "bar_group"
 
     expected_size = pd.Series(
@@ -1026,7 +1035,7 @@ class TestGroupByBarGroup:
           "2021-01-01 03:48:59.999+00:00",
         ]
       ),
-    )
+    ).astype("int32")
     expected_size.index.name = "bar_group"
 
     pd.testing.assert_frame_equal(result.df, expected_df)
@@ -1040,9 +1049,6 @@ class TestGroupByBarGroup:
         "low": [99],
         "close": [101],
         "volume": [1000],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-        ],
       },
       index=pd.DatetimeIndex(
         [
@@ -1050,15 +1056,25 @@ class TestGroupByBarGroup:
         ]
       ),
     ).iloc[:0]  # empty dataframe
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+      ],
+      index=pd.DatetimeIndex(
+        [
+          "2021-01-01 03:45:59.999+00:00",
+        ]
+      ),
+    )[:0]
 
     with ut.expect_no_mutation(df):
-      result = udf.group_by_bar_group(df)
-      expected_df = df.copy().drop(columns=["bar_group"])
+      result = udf.group_by_bar_group(df, bar_group)
+      expected_df = df.copy()
       expected_df.index.name = "bar_group"
 
     expected_size = pd.Series(
       [], dtype="int64", index=pd.DatetimeIndex([], dtype="datetime64[ns, UTC]")
-    )
+    ).astype("int32")
     expected_size.index.name = "bar_group"
 
     pd.testing.assert_frame_equal(result.df, expected_df)
@@ -1082,13 +1098,16 @@ class TestCalculateGroupedValues:
         "low": [95, 96, 97, 98],
         "close": [104, 105, 106, 107],
         "volume": [1000, 1100, 1200, 1300],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-        ],
       },
+      index=index,
+    )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+      ],
       index=index,
     )
 
@@ -1096,7 +1115,7 @@ class TestCalculateGroupedValues:
       return df_ + df_.shift(1)
 
     with ut.expect_no_mutation(df):
-      result = udf.calculate_grouped_values(df, compute_func)
+      result = udf.calculate_grouped_values(df, bar_group, compute_func)
 
     # Expected calculation:
     # 1. Group by bar_group: first group has [100,105,95,104,1000] and [101,106,96,105,1100]
@@ -1124,15 +1143,15 @@ class TestCalculateGroupedValues:
       start_date=dt.date(2021, 1, 1),
       end_date=dt.date(2021, 1, 2),
     )
-    df["bar_group"] = df.index.to_series().rename("bar_group")
+    bar_group = df.index.to_series().rename("bar_group")
 
     def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
       return 2 * df_
 
     with ut.expect_no_mutation(df):
-      result = udf.calculate_grouped_values(df, compute_func)
+      result = udf.calculate_grouped_values(df, bar_group, compute_func)
 
-    pd.testing.assert_frame_equal(result, 2 * df.drop(columns=["bar_group"]))
+    pd.testing.assert_frame_equal(result, 2 * df)
 
   def test_multiple_compute_functions(self):
     index = pd.DatetimeIndex(
@@ -1150,13 +1169,16 @@ class TestCalculateGroupedValues:
         "low": [95, 96, 97, 98],
         "close": [104, 105, 106, 107],
         "volume": [1000, 1100, 1200, 1300],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-        ],
       },
+      index=index,
+    )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+      ],
       index=index,
     )
 
@@ -1175,7 +1197,9 @@ class TestCalculateGroupedValues:
       )
 
     with ut.expect_no_mutation(df):
-      result = udf.calculate_grouped_values(df, [compute_func1, compute_func2])
+      result = udf.calculate_grouped_values(
+        df, bar_group, [compute_func1, compute_func2]
+      )
 
     # Expected calculation:
     # see point 1 and 2 in test_basic_functionality
@@ -1203,11 +1227,14 @@ class TestCalculateGroupedValues:
         "low": [95, 96],
         "close": [104, 105],
         "volume": [1000, 1100],
-        "bar_group": [
-          pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
-          pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
-        ],
       },
+      index=index,
+    )
+    bar_group = pd.Series(
+      [
+        pd.Timestamp("2021-01-01 03:45:59.999+00:00"),
+        pd.Timestamp("2021-01-01 03:46:59.999+00:00"),
+      ],
       index=index,
     )
 
@@ -1222,7 +1249,7 @@ class TestCalculateGroupedValues:
       ValueError,
       match="Duplicate columns found across compute functions: \\['result'\\]",
     ):
-      udf.calculate_grouped_values(df, [compute_func1, compute_func2])
+      udf.calculate_grouped_values(df, bar_group, [compute_func1, compute_func2])
 
   def test_empty_dataframe(self):
     # the actual data does not matter as we do [:0] on the dataframe to get an empty dataframe
@@ -1233,16 +1260,19 @@ class TestCalculateGroupedValues:
         "low": [99],
         "close": [101],
         "volume": [1000],
-        "bar_group": [pd.Timestamp("2021-01-01 03:45:59.999+00:00")],
       },
       index=pd.DatetimeIndex(["2021-01-01 03:45:59.999+00:00"]),
     ).iloc[:0]
+    bar_group = pd.Series(
+      [pd.Timestamp("2021-01-01 03:45:59.999+00:00")],
+      index=pd.DatetimeIndex(["2021-01-01 03:45:59.999+00:00"]),
+    )[:0]
     assert df.empty
 
     def compute_func(df_: pd.DataFrame) -> pd.DataFrame:
       return pd.DataFrame({"test_col": df_["open"] * 2}, index=df_.index)
 
     with ut.expect_no_mutation(df):
-      result = udf.calculate_grouped_values(df, compute_func)
+      result = udf.calculate_grouped_values(df, bar_group, compute_func)
 
     pd.testing.assert_index_equal(result.index, df.index)

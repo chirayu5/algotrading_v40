@@ -18,7 +18,6 @@ def _prepare_and_compute(
   | list[Callable[[pd.DataFrame], pd.DataFrame]],
   group_size_minutes: int,
   offset_minutes: int,
-  copy_df: bool = False,
 ) -> Tuple[pd.DataFrame, np.ndarray]:
   """
   Common routine used by all public helpers and worker processes.
@@ -29,12 +28,6 @@ def _prepare_and_compute(
      `u_df.calculate_grouped_values`.
   4. Return `(result_dataframe, offsets_ndarray)`
 
-  Parameters
-  ----------
-  copy_df
-      • True  – work on a copy (safe for multiprocessing and for callers
-        that do not want their frame mutated).
-      • False – mutate in-place (used only when already inside a copy).
   """
   tbubg_result = bg_tbu.get_time_based_uniform_bar_group_for_indian_market(
     df=df,
@@ -42,13 +35,11 @@ def _prepare_and_compute(
     offset_minutes=offset_minutes,
   )
 
-  target_df = df.copy() if copy_df else df
   with pd.option_context("mode.chained_assignment", None):
-    target_df["bar_group"] = tbubg_result.bar_groups
-    target_df["offset"] = tbubg_result.offsets
-    result = u_df.calculate_grouped_values(df=target_df, compute_func=f_calc)
-    if not copy_df:
-      df.drop(columns=["bar_group", "offset"], inplace=True)
+    bar_group = tbubg_result.bar_groups
+    result = u_df.calculate_grouped_values(
+      df=df, bar_group=bar_group, compute_func=f_calc
+    )
 
   return result, tbubg_result.offsets.values
 
@@ -63,14 +54,12 @@ def _calc_features_for_offset(
   ],
 ) -> Tuple[pd.DataFrame, np.ndarray]:
   """Thin wrapper so that Pool.map can pickle the call."""
-  df, f_calc, group_size_minutes, offset_minutes, copy_df = args
-  # Work on a *copy* because multiple processes will access the same df.
+  df, f_calc, group_size_minutes, offset_minutes = args
   return _prepare_and_compute(
     df=df,
     f_calc=f_calc,
     group_size_minutes=group_size_minutes,
     offset_minutes=offset_minutes,
-    copy_df=copy_df,
   )
 
 
@@ -130,7 +119,6 @@ def calculate_features_with_last_value_guaranteed(
     f_calc=f_calc,
     group_size_minutes=group_size_minutes,
     offset_minutes=int(last_offset),
-    copy_df=False,
   )
   return result
 
@@ -156,11 +144,7 @@ def calculate_features_with_complete_coverage(
   # Build argument list: one entry per possible offset                      #
   # ----------------------------------------------------------------------- #
   args_iterable = [
-    # the last entry "n_jobs not in (None, 1)" is the copy_df argument.
-    # n_jobs not in (None, 1) is True => parallel execution is happening
-    # => we need to copy the dfs to ensure setting the bar_group and offset
-    # columns for one process does not affect the other processes
-    (df, f_calc, group_size_minutes, offset_minutes, n_jobs not in (None, 1))
+    (df, f_calc, group_size_minutes, offset_minutes)
     for offset_minutes in range(group_size_minutes)
   ]
 

@@ -257,18 +257,25 @@ class GroupByBarGroupResult:
   bar_group_size: pd.Series
 
 
-def group_by_bar_group(df: pd.DataFrame) -> GroupByBarGroupResult:
+def group_by_bar_group(df: pd.DataFrame, bar_group: pd.Series) -> GroupByBarGroupResult:
+  if not bar_group.index.equals(df.index):
+    raise ValueError("bar_group index must be equal to df index")
+  dfg = df.groupby(by=bar_group).agg(
+    {
+      "open": "first",
+      "high": "max",
+      "low": "min",
+      "close": "last",
+      "volume": "sum",
+    }
+  )
+  dfg.index.name = "bar_group"
+  bar_group_size = df.groupby(by=bar_group).size().astype("int32")
+  bar_group_size.index.name = "bar_group"
+
   return GroupByBarGroupResult(
-    df=df.groupby(by="bar_group").agg(
-      {
-        "open": "first",
-        "high": "max",
-        "low": "min",
-        "close": "last",
-        "volume": "sum",
-      }
-    ),
-    bar_group_size=df.groupby(by="bar_group").size().astype("int64"),
+    df=dfg,
+    bar_group_size=bar_group_size,
   )
 
 
@@ -279,6 +286,7 @@ def group_by_bar_group(df: pd.DataFrame) -> GroupByBarGroupResult:
 
 def calculate_grouped_values(
   df: pd.DataFrame,
+  bar_group: pd.Series,
   compute_func: Callable[[pd.DataFrame], pd.DataFrame]
   | list[Callable[[pd.DataFrame], pd.DataFrame]],
 ) -> pd.DataFrame:
@@ -307,7 +315,7 @@ def calculate_grouped_values(
       compute_func3,
     ])
   """
-  dfg = group_by_bar_group(df)
+  dfg = group_by_bar_group(df, bar_group=bar_group)
   if not isinstance(compute_func, list):
     compute_func = [compute_func]
   if len(compute_func) == 0:
