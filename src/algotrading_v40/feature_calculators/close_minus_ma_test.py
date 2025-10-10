@@ -5,7 +5,7 @@ from typing import Callable, List, Tuple
 import pandas as pd
 import pytest
 
-import algotrading_v40.bar_groupers.time_based as bg_tb
+import algotrading_v40.bar_groupers.time_based_uniform as bg_tbu
 import algotrading_v40.feature_calculators.close_minus_ma as fc_close_minus_ma
 import algotrading_v40.utils.df as udf
 import algotrading_v40.utils.streaming as us
@@ -27,7 +27,7 @@ INTERVAL_GROUPS: List[Tuple[int, Callable[[pd.DataFrame], pd.Series]]] = [
   (
     1,
     partial(
-      bg_tb.get_time_based_bar_group_for_indian_market,
+      bg_tbu.get_time_based_uniform_bar_group_for_indian_market,
       group_size_minutes=1,
       offset_minutes=0,
     ),
@@ -35,7 +35,7 @@ INTERVAL_GROUPS: List[Tuple[int, Callable[[pd.DataFrame], pd.Series]]] = [
   (
     11,
     partial(
-      bg_tb.get_time_based_bar_group_for_indian_market,
+      bg_tbu.get_time_based_uniform_bar_group_for_indian_market,
       group_size_minutes=11,
       offset_minutes=3,
     ),
@@ -70,8 +70,9 @@ class TestCloseMma:
     # Add bar grouping *inside* the helper so the DataFrame passed to
     # compare_batch_and_stream remains OHLCV-only.
     def _group_and_calc(d: pd.DataFrame) -> pd.DataFrame:
-      d["bar_group"] = group_func(d)
-      return udf.calculate_grouped_values(d, _calc_close_minus_ma)
+      return udf.calculate_grouped_values(
+        d, group_func(d).bar_groups, _calc_close_minus_ma
+      )
 
     # -------- Act -----------------------------------------------------------
     result = us.compare_batch_and_stream(df, _group_and_calc)
@@ -111,11 +112,14 @@ class TestCloseMma:
       res1[f"close_minus_ma_{LOOKBACK}_{ATR_LENGTH}"]
     )
     assert quality.n_good_values >= 375
-    df["bar_group"] = bg_tb.get_time_based_bar_group_for_indian_market(
-      df, group_size_minutes=1, offset_minutes=0
-    )
     with ut.expect_no_mutation(df):
-      res2 = udf.calculate_grouped_values(df, _calc_close_minus_ma)
+      res2 = udf.calculate_grouped_values(
+        df,
+        bg_tbu.get_time_based_uniform_bar_group_for_indian_market(
+          df, group_size_minutes=1, offset_minutes=0
+        ).bar_groups,
+        _calc_close_minus_ma,
+      )
     pd.testing.assert_series_equal(
       res1[f"close_minus_ma_{LOOKBACK}_{ATR_LENGTH}"],
       res2[f"close_minus_ma_{LOOKBACK}_{ATR_LENGTH}"],
